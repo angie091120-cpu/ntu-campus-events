@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>活動列表 · 校園活動</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg: #F5F1E8;
+      --surface: #FFFFFF;
+      --text: #1A1815;
+      --text-muted: #6B665C;
+      --border: #DED8C5;
+      --border-soft: #EBE6D8;
+      --accent: #2C5530;
+
+      --c-lecture: #2E5BBA;
+      --c-workshop: #D97342;
+      --c-club: #7B4FB8;
+      --c-performance: #C73E7E;
+      --c-sports: #4A7C3A;
+      --c-competition: #B82E2E;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans TC', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ───── Header（與地圖頁一致） ───── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .brand .accent {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+      transform: translateY(-3px);
+    }
+    .brand .sub {
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-left: 4px;
+    }
+
+    nav { display: flex; gap: 28px; }
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding-bottom: 6px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+    nav a:hover { color: var(--text); }
+
+    /* ───── Main ───── */
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 36px 80px;
+    }
+
+    .page-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+
+    /* ───── Search + sort ───── */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .search-box {
+      flex: 1;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      font-size: 14px;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 8px;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.1);
+    }
+    .search-box::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translateY(-50%);
+      border: 1.5px solid var(--text-muted);
+      border-radius: 50%;
+      box-shadow: 5px 5px 0 -3px var(--text-muted);
+    }
+
+    .sort-box select {
+      padding: 12px 36px 12px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B665C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+    .sort-box select:focus { outline: none; border-color: var(--accent); }
+
+    /* ───── Type chips ───── */
+    .type-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .chip:hover { border-color: var(--text-muted); }
+    .chip.active {
+      background: var(--text);
+      color: white;
+      border-color: var(--text);
+    }
+    .chip .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .chip .count {
+      font-size: 11px;
+      opacity: 0.6;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ───── Event cards ───── */
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .event-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 22px 26px;
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 28px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 1px solid var(--border-soft);
+    }
+    .event-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+    }
+
+    .event-card .info { min-width: 0; }
+    .event-card .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      color: white;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .tag.lecture     { background: var(--c-lecture); }
+    .tag.workshop    { background: var(--c-workshop); }
+    .tag.club        { background: var(--c-club); }
+    .tag.performance { background: var(--c-performance); }
+    .tag.sports      { background: var(--c-sports); }
+    .tag.competition { background: var(--c-competition); }
+
+    .event-card h3 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .event-card .desc {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .event-card .actions {
+      display: flex;
+      gap: 8px;
+    }
+    .event-card .actions a {
+      font-size: 12px;
+      padding: 7px 12px;
+      border-radius: 5px;
+      text-decoration: none;
+      transition: background 0.15s;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .event-card .actions .primary {
+      background: var(--text);
+      color: white;
+    }
+    .event-card .actions .primary:hover { background: var(--accent); }
+    .event-card .actions .secondary {
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .event-card .actions .secondary:hover { background: var(--bg); color: var(--text); }
+
+    /* 卡片右側 - 日期區 */
+    .event-card .side {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-left: 1px solid var(--border-soft);
+      padding-left: 28px;
+      text-align: right;
+    }
+    .event-card .date-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .event-card .month {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      margin-bottom: 4px;
+    }
+    .event-card .day {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+    .event-card .time {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .event-card .loc {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    /* ───── Empty state ───── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+    }
+    .empty-state .big {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 28px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    /* ───── Responsive ───── */
+    @media (max-width: 720px) {
+      main { padding: 32px 20px 60px; }
+      .page-title { font-size: 28px; }
+      .controls { flex-direction: column; }
+
+      .event-card {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .event-card .side {
+        border-left: none;
+        border-top: 1px solid var(--border-soft);
+        padding-left: 0;
+        padding-top: 16px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+        text-align: left;
+      }
+      .event-card .date-block { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      校園活動
+      <span class="accent"></span>
+      地圖
+      <span class="sub">NTU CAMPUS EVENTS</span>
+    </div>
+    <nav>
+      <a href="index.html">地圖</a>
+      <a href="events.html" class="active">活動列表</a>
+      <a href="calendar.html">行事曆</a>
+      <a href="#">關於</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1 class="page-title">所有活動</h1>
+    <p class="page-subtitle" id="subtitle">載入中...</p>
+
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜尋活動標題、地點、描述...">
+      </div>
+      <div class="sort-box">
+        <select id="sortSelect">
+          <option value="date-asc">日期由近到遠</option>
+          <option value="date-desc">日期由遠到近</option>
+          <option value="title">依標題排序</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="type-chips" id="typeChips"></div>
+
+    <div class="event-list" id="eventList"></div>
+  </main>
+
+  <script src="events.js"></script>
+  <script>
+    const state = {
+      activeTypes: new Set(EVENT_TYPES.map(t => t.id)),
+      search: '',
+      sort: 'date-asc',
+    };
+
+    const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+    function renderChips() {
+      const counts = {};
+      EVENTS.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1; });
+      const allSelected = state.activeTypes.size === EVENT_TYPES.length;
+
+      const container = document.getElementById('typeChips');
+      const allChip = `
+        <div class="chip ${allSelected ? 'active' : ''}" data-type="__all">
+          全部 <span class="count">${EVENTS.length}</span>
+        </div>`;
+      const others = EVENT_TYPES.map(t => `
+        <div class="chip ${!allSelected && state.activeTypes.has(t.id) ? 'active' : ''}" data-type="${t.id}">
+          <span class="dot" style="background:${t.color}"></span>
+          ${t.name} <span class="count">${counts[t.id] || 0}</span>
+        </div>
+      `).join('');
+      container.innerHTML = allChip + others;
+
+      container.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const type = chip.dataset.type;
+          if (type === '__all') {
+            state.activeTypes = new Set(EVENT_TYPES.map(t => t.id));
+          } else {
+            // 若目前只勾這個類型，再點變回全選；否則切換成單選此類型
+            if (state.activeTypes.size === 1 && state.activeTypes.has(type)) {
+              state.activeTypes = new Set(EVENT_TYPES.map(t => t.id));
+            } else {
+              state.activeTypes = new Set([type]);
+            }
+          }
+          renderChips();
+          renderList();
+        });
+      });
+    }
+
+    function filterAndSort() {
+      let filtered = EVENTS.filter(e => state.activeTypes.has(e.type));
+
+      if (state.search) {
+        const q = state.search.toLowerCase();
+        filtered = filtered.filter(e =>
+          e.title.toLowerCase().includes(q) ||
+          (e.location || '').toLowerCase().includes(q) ||
+          (e.description || '').toLowerCase().includes(q)
+        );
+      }
+
+      filtered.sort((a, b) => {
+        if (state.sort === 'date-asc')  return new Date(a.date) - new Date(b.date);
+        if (state.sort === 'date-desc') return new Date(b.date) - new Date(a.date);
+        if (state.sort === 'title')     return a.title.localeCompare(b.title, 'zh-Hant');
+        return 0;
+      });
+
+      return filtered;
+    }
+
+    function renderList() {
+      const list = filterAndSort();
+      const container = document.getElementById('eventList');
+      const subtitle = document.getElementById('subtitle');
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="big">沒有符合條件的活動</div>
+            <div>試試其他關鍵字或調整篩選類型</div>
+          </div>`;
+        subtitle.textContent = `共 0 場活動`;
+        return;
+      }
+
+      const typesShown = new Set(list.map(e => e.type)).size;
+      subtitle.textContent = `共 ${list.length} 場活動 · 涵蓋 ${typesShown} 種類型`;
+
+      container.innerHTML = list.map(event => {
+        const type = EVENT_TYPES.find(t => t.id === event.type) || {};
+        const d = new Date(event.date);
+        const month = MONTHS[d.getMonth()];
+        const day = d.getDate();
+        return `
+          <article class="event-card">
+            <div class="info">
+              <span class="tag ${event.type}">${type.name || event.type}</span>
+              <h3>${event.title}</h3>
+              <p class="desc">${event.description || ''}</p>
+              <div class="actions">
+                <a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>
+                <a href="index.html#${event.id}" class="secondary">在地圖上查看</a>
+              </div>
+            </div>
+            <div class="side">
+              <div class="date-block">
+                <span class="month">${month}</span>
+                <span class="day">${day}</span>
+                <span class="time">${event.time || ''}</span>
+              </div>
+              <div class="loc">${event.location || ''}</div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      state.search = e.target.value;
+      renderList();
+    });
+
+    document.getElementById('sortSelect').addEventListener('change', (e) => {
+      state.sort = e.target.value;
+      renderList();
+    });
+
+    // 啟動：先從 Google Sheet 讀資料，再渲染畫面
+    loadEvents().then(() => {
+      state.activeTypes = new Set(EVENT_TYPES.map(t => t.id));
+      renderChips();
+      renderList();
+    });
+  </script>
+</body>
+</html>

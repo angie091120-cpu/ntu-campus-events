@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>資料診斷 · 校園活動</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg: #F5F1E8; --surface: #FFFFFF; --text: #1A1815; --muted: #6B665C;
+      --border: #DED8C5; --border-soft: #EBE6D8;
+      --ok: #2C5530; --warn: #D97342; --err: #B82E2E; --info: #2E5BBA;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg); color: var(--text);
+      padding: 40px 24px; line-height: 1.6;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; }
+    h1 { font-size: 28px; margin-bottom: 8px; font-weight: 700; }
+    .subtitle { color: var(--muted); margin-bottom: 28px; font-size: 14px; }
+
+    .status-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
+      border-left: 4px solid var(--border);
+    }
+    .status-card.ok   { border-left-color: var(--ok); }
+    .status-card.warn { border-left-color: var(--warn); }
+    .status-card.err  { border-left-color: var(--err); }
+    .status-card.info { border-left-color: var(--info); }
+
+    .status-card h2 {
+      font-size: 16px; margin-bottom: 8px; font-weight: 700;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .status-card .icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .ok   .icon { background: var(--ok); }
+    .warn .icon { background: var(--warn); }
+    .err  .icon { background: var(--err); }
+    .info .icon { background: var(--info); }
+
+    .status-card p { font-size: 14px; color: var(--text); }
+    .status-card p + p { margin-top: 6px; }
+    .status-card .detail {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; word-break: break-all;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      background: var(--surface);
+      border-radius: 12px; overflow: hidden;
+      margin-top: 8px; font-size: 13px;
+    }
+    th, td {
+      padding: 10px 14px; text-align: left;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    th { background: var(--bg); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    td.bad { color: var(--err); font-weight: 500; }
+    td.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+
+    .url-input-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 20px;
+      border: 1px dashed var(--border);
+    }
+    .url-input-card h3 {
+      font-size: 14px; margin-bottom: 10px;
+      letter-spacing: 0.05em;
+    }
+    .url-input-card p { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .input-row { display: flex; gap: 8px; }
+    .input-row input {
+      flex: 1; padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px; font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .input-row input:focus { outline: none; border-color: var(--info); }
+
+    .btn {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer; border-radius: 6px;
+      font-size: 13px; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--bg); }
+    .btn.primary { background: var(--text); color: white; border-color: var(--text); }
+    .btn.primary:hover { background: var(--ok); border-color: var(--ok); }
+
+    .nav-back {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 10px 18px;
+      background: var(--text); color: white;
+      text-decoration: none;
+      border-radius: 6px; font-size: 14px;
+    }
+    .nav-back:hover { background: var(--ok); }
+
+    .loading {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--info);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>資料診斷工具</h1>
+    <p class="subtitle">檢查 Google Sheet 是否正確連通，以及每筆活動資料是否正常。</p>
+
+    <div id="results">
+      <div class="status-card info">
+        <h2><span class="icon">⋯</span>初始化中</h2>
+        <p><span class="loading"></span>正在啟動診斷程式...</p>
+      </div>
+    </div>
+
+    <a href="index.html" class="nav-back">← 回到地圖</a>
+  </div>
+
+  <!-- 嘗試載入 events.js；如果失敗也沒關係，下面會處理 -->
+  <script src="events.js" onerror="window.__eventsJsLoadFailed = true;"></script>
+
+  <script>
+    /* ════════════════════════════════════════════════
+       備援設定：如果 events.js 沒載入，會用這份
+       這份要跟 events.js 裡的 FIELD_MAP / EVENT_TYPES 一致
+       ════════════════════════════════════════════════ */
+    const FALLBACK_FIELD_MAP = {
+      'id': 'id', '標題': 'title', '類型': 'type', '日期': 'date',
+      '時間': 'time', '地點': 'location', 'x座標': 'x', 'y座標': 'y',
+      '描述': 'description', '連結': 'link',
+    };
+    const FALLBACK_EVENT_TYPES = [
+      { id: 'lecture',     name: '講座' },
+      { id: 'workshop',    name: '工作坊' },
+      { id: 'club',        name: '社團活動' },
+      { id: 'performance', name: '表演' },
+      { id: 'sports',      name: '運動' },
+      { id: 'competition', name: '競賽' },
+    ];
+
+    const results = document.getElementById('results');
+
+    function card(level, title, body, detail) {
+      const iconMap = { ok: '✓', warn: '!', err: '✕', info: 'i' };
+      const html = `
+        <div class="status-card ${level}">
+          <h2><span class="icon">${iconMap[level]}</span>${title}</h2>
+          ${body ? `<p>${body}</p>` : ''}
+          ${detail ? `<div class="detail">${detail}</div>` : ''}
+        </div>`;
+      results.insertAdjacentHTML('beforeend', html);
+    }
+
+    /* 取得 events.js 提供的設定；如果沒載入就用 fallback */
+    function getConfig() {
+      const eventsJsLoaded = (typeof SHEET_URL !== 'undefined');
+      return {
+        eventsJsLoaded,
+        sheetUrl: eventsJsLoaded ? SHEET_URL : null,
+        fieldMap: (typeof FIELD_MAP !== 'undefined') ? FIELD_MAP : FALLBACK_FIELD_MAP,
+        eventTypes: (typeof EVENT_TYPES !== 'undefined') ? EVENT_TYPES : FALLBACK_EVENT_TYPES,
+        parseCsvFn: (typeof parseCsv !== 'undefined') ? parseCsv : null,
+      };
+    }
+
+    async function runDiagnostic(overrideUrl) {
+      results.innerHTML = '';
+
+      const cfg = getConfig();
+
+      // 1. 檢查 events.js
+      if (!cfg.eventsJsLoaded) {
+        if (window.__eventsJsLoadFailed) {
+          card('err', '找不到 events.js',
+            '瀏覽器無法載入 events.js 檔案，請確認：',
+            '① events.js 是否跟 diagnostic.html 放在同一個資料夾<br>② 檔名是否完全相同（注意大小寫）');
+        } else {
+          card('warn', 'events.js 載入了但內容異常',
+            'events.js 載入成功但裡面沒有預期的設定，可能檔案被改壞了。');
+        }
+        card('info', '不過你可以直接在這裡測試試算表',
+          '在下方輸入你的 Google Sheet 公開網址，立刻檢查能不能連通：');
+        renderUrlInput();
+        if (!overrideUrl) return;
+      } else {
+        card('ok', 'events.js 已正確載入',
+          '已讀取到設定檔。');
+      }
+
+      // 2. 決定要測試的網址
+      let testUrl = overrideUrl || cfg.sheetUrl;
+      if (!testUrl) {
+        card('warn', 'SHEET_URL 還沒設定',
+          '目前 events.js 裡的 SHEET_URL 是空的，網站會用內建範例資料運作。要連 Google Sheet 請把網址貼進 events.js 並重新整理本頁。');
+        renderUrlInput();
+        return;
+      }
+      card('ok', '網址已設定', null, testUrl);
+
+      // 3. 嘗試抓取
+      let csv;
+      try {
+        const res = await fetch(testUrl);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        csv = await res.text();
+      } catch (err) {
+        card('err', '無法抓取試算表',
+          '常見原因：① 網址錯誤 ② 試算表沒「發佈到網路」 ③ 從 file:// 開啟本頁時某些瀏覽器會擋（試試把網站放到 Vercel 或本地伺服器）',
+          '錯誤訊息：' + err.message);
+        renderUrlInput();
+        return;
+      }
+      card('ok', '試算表抓取成功',
+        `共收到 ${csv.length.toLocaleString()} 個字元的 CSV 資料。`);
+
+      // 4. 解析 CSV
+      const parsed = Papa.parse(csv, {
+        header: true, skipEmptyLines: true,
+        transformHeader: h => h.trim(),
+      });
+
+      if (parsed.errors && parsed.errors.length) {
+        card('warn', 'CSV 解析時有警告',
+          `共 ${parsed.errors.length} 個小問題，多半不影響使用。`,
+          parsed.errors.slice(0, 5).map(e => `第 ${e.row} 列：${e.message}`).join('<br>'));
+      }
+
+      // 5. 檢查欄位名稱
+      const headers = parsed.meta.fields || [];
+      const expectedHeaders = Object.keys(cfg.fieldMap);
+      const missing = expectedHeaders.filter(h => !headers.includes(h));
+      const extra = headers.filter(h => !expectedHeaders.includes(h));
+
+      if (missing.length === 0) {
+        card('ok', '欄位名稱檢查通過',
+          `試算表的欄位：<code>${headers.join('、')}</code>`);
+      } else {
+        card('err', `缺少 ${missing.length} 個必要欄位`,
+          '試算表第一列必須包含以下欄位（順序不限）：',
+          `<strong style="color:var(--err)">缺少：</strong>${missing.join('、')}<br><strong>目前有：</strong>${headers.join('、')}`);
+      }
+      if (extra.length > 0) {
+        card('info', `偵測到 ${extra.length} 個額外欄位`,
+          '這些欄位不在 FIELD_MAP 設定中，會被忽略（不影響運作）。',
+          extra.join('、'));
+      }
+
+      // 6. 解析每筆活動
+      const typeNameToId = {};
+      cfg.eventTypes.forEach(t => { typeNameToId[t.name] = t.id; });
+
+      const events = parsed.data
+        .map(row => {
+          const event = {};
+          for (const [sheetKey, codeKey] of Object.entries(cfg.fieldMap)) {
+            let val = row[sheetKey];
+            if (val !== undefined && val !== null) val = String(val).trim();
+            event[codeKey] = val;
+          }
+          if (event.type && typeNameToId[event.type]) event.type = typeNameToId[event.type];
+          event.x = parseFloat(event.x) || 0;
+          event.y = parseFloat(event.y) || 0;
+          return event;
+        })
+        .filter(e => e.id && e.title);
+
+      if (events.length === 0) {
+        card('err', '沒有讀到任何活動',
+          '可能原因：每一列都缺少 id 或標題，或試算表只有第一列（沒有資料）。');
+        return;
+      }
+      card('ok', `成功讀取 ${events.length} 筆活動`, '以下是解析結果（紅色標示異常欄位）：');
+
+      // 7. 列出每筆活動
+      const typeIds = cfg.eventTypes.map(t => t.id);
+      const rows = events.map(e => {
+        const cells = [
+          `<td class="mono">${e.id || '<span class="bad">空</span>'}</td>`,
+          `<td>${e.title || '<span class="bad">空</span>'}</td>`,
+          typeIds.includes(e.type)
+            ? `<td>${cfg.eventTypes.find(t => t.id === e.type).name}</td>`
+            : `<td class="bad">「${e.type || '空'}」未對應</td>`,
+          `<td class="mono">${e.date || '—'}</td>`,
+          `<td>${e.location || '—'}</td>`,
+          (e.x > 0 && e.x < 1 && e.y > 0 && e.y < 1)
+            ? `<td class="mono">${e.x.toFixed(3)}, ${e.y.toFixed(3)}</td>`
+            : `<td class="bad mono">${e.x}, ${e.y} 異常</td>`,
+        ];
+        return `<tr>${cells.join('')}</tr>`;
+      }).join('');
+
+      results.insertAdjacentHTML('beforeend', `
+        <table>
+          <thead><tr>
+            <th>id</th><th>標題</th><th>類型</th><th>日期</th><th>地點</th><th>座標</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `);
+
+      // 8. 檢查 id 重複
+      const ids = events.map(e => e.id);
+      const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+      if (duplicates.length > 0) {
+        card('err', 'id 重複',
+          '每筆活動的 id 必須唯一，否則「在地圖上查看」功能會出錯。',
+          '重複的 id：' + [...new Set(duplicates)].join('、'));
+      }
+
+      // 9. 總結
+      const errCount = results.querySelectorAll('.status-card.err').length;
+      const warnCount = results.querySelectorAll('.status-card.warn').length;
+      if (errCount === 0 && warnCount === 0) {
+        card('ok', '一切正常！',
+          '你的 Google Sheet 已正確連通，網站會自動讀取最新資料。回到地圖頁就能看到結果。');
+      } else if (errCount > 0) {
+        card('err', `有 ${errCount} 個需要修正的問題`,
+          '請依照上方的紅色提示修正，然後重新整理本頁。');
+      } else {
+        card('warn', `有 ${warnCount} 個小問題`,
+          '依照黃色提示處理，或直接回地圖頁試試。');
+      }
+    }
+
+    function renderUrlInput() {
+      // 避免重複插入
+      if (document.getElementById('urlInputCard')) return;
+
+      results.insertAdjacentHTML('beforeend', `
+        <div class="url-input-card" id="urlInputCard">
+          <h3>手動測試試算表網址</h3>
+          <p>貼上你的 Google Sheet 「發佈到網路」CSV 網址，按「測試」就能檢查是否能正常讀取。</p>
+          <div class="input-row">
+            <input type="text" id="urlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+            <button class="btn primary" id="testBtn">測試</button>
+          </div>
+        </div>
+      `);
+
+      // 預填使用者上次提供的網址（如果在 fallback 模式）
+      const cfg = getConfig();
+      if (cfg.sheetUrl) {
+        document.getElementById('urlInput').value = cfg.sheetUrl;
+      }
+
+      document.getElementById('testBtn').addEventListener('click', () => {
+        const url = document.getElementById('urlInput').value.trim();
+        if (!url) return alert('請先貼上網址');
+        runDiagnostic(url);
+      });
+
+      document.getElementById('urlInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('testBtn').click();
+      });
+    }
+
+    // 啟動（等所有 script 都載入完成後）
+    window.addEventListener('load', () => runDiagnostic());
+  </script>
+</body>
+</html>
