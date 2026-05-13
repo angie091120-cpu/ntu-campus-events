@@ -253,12 +253,19 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .event-card .organizer {
+      font-size: 12px;
+      color: var(--text-muted);
       margin-bottom: 14px;
     }
 
     .event-card .actions {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
     }
     .event-card .actions a {
       font-size: 12px;
@@ -279,6 +286,19 @@
       border: 1px solid var(--border);
     }
     .event-card .actions .secondary:hover { background: var(--bg); color: var(--text); }
+    .event-card .reg-badge {
+      display: inline-block;
+      padding: 6px 11px;
+      font-size: 11px;
+      border-radius: 5px;
+      background: rgba(217, 115, 66, 0.12);
+      color: #B85A2B;
+      font-weight: 500;
+    }
+    .event-card .reg-badge.free {
+      background: rgba(74, 124, 58, 0.12);
+      color: var(--accent);
+    }
 
     /* 卡片右側 - 日期區 */
     .event-card .side {
@@ -490,28 +510,54 @@
         const d = new Date(event.date);
         const month = MONTHS[d.getMonth()];
         const day = d.getDate();
+
+        // 主辦單位顯示
+        const organizerHtml = event.organizer
+          ? `<div class="organizer">主辦：${escapeHtml(event.organizer)}</div>` : '';
+
+        // 報名相關按鈕
+        let actionBtns = '';
+        if (event.needsRegistration && event.registrationLink) {
+          actionBtns = `
+            <a href="${event.registrationLink}" class="primary" target="_blank" rel="noopener">立即報名 →</a>
+            ${event.link ? `<a href="${event.link}" class="secondary" target="_blank" rel="noopener">詳情</a>` : ''}
+            <a href="index.html#${event.id}" class="secondary">地圖</a>`;
+        } else if (event.needsRegistration === true) {
+          actionBtns = `
+            <span class="reg-badge">⚠ 需報名</span>
+            ${event.link ? `<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
+            <a href="index.html#${event.id}" class="secondary">地圖</a>`;
+        } else {
+          actionBtns = `
+            ${event.link ? `<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
+            ${event.needsRegistration === false ? `<span class="reg-badge free">自由參加</span>` : ''}
+            <a href="index.html#${event.id}" class="secondary">地圖</a>`;
+        }
+
         return `
           <article class="event-card">
             <div class="info">
               <span class="tag ${event.type}">${type.name || event.type}</span>
-              <h3>${event.title}</h3>
-              <p class="desc">${event.description || ''}</p>
-              <div class="actions">
-                <a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>
-                <a href="index.html#${event.id}" class="secondary">在地圖上查看</a>
-              </div>
+              <h3>${escapeHtml(event.title)}</h3>
+              <p class="desc">${escapeHtml(event.description || '')}</p>
+              ${organizerHtml}
+              <div class="actions">${actionBtns}</div>
             </div>
             <div class="side">
               <div class="date-block">
                 <span class="month">${month}</span>
                 <span class="day">${day}</span>
-                <span class="time">${event.time || ''}</span>
+                <span class="time">${escapeHtml(event.time || '')}</span>
               </div>
-              <div class="loc">${event.location || ''}</div>
+              <div class="loc">${escapeHtml(event.location || '')}</div>
             </div>
           </article>
         `;
       }).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
     document.getElementById('searchInput').addEventListener('input', (e) => {

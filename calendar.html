@@ -369,6 +369,8 @@
     .modal .actions {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
     }
     .modal .actions a {
       padding: 10px 18px;
@@ -391,6 +393,19 @@
       color: var(--text);
     }
     .modal .actions .secondary:hover { background: var(--bg); }
+    .modal .actions .reg-badge {
+      display: inline-block;
+      padding: 8px 14px;
+      font-size: 12px;
+      border-radius: 6px;
+      background: rgba(217, 115, 66, 0.12);
+      color: #B85A2B;
+      font-weight: 500;
+    }
+    .modal .actions .reg-badge.free {
+      background: rgba(74, 124, 58, 0.12);
+      color: var(--accent);
+    }
 
     /* ───── Empty state ───── */
     .empty {
@@ -475,10 +490,7 @@
       <h2 id="modalTitle"></h2>
       <div class="meta" id="modalMeta"></div>
       <p class="desc" id="modalDesc"></p>
-      <div class="actions">
-        <a href="#" class="primary" id="modalLink" target="_blank" rel="noopener">查看活動 →</a>
-        <a href="#" class="secondary" id="modalMapLink">在地圖上查看</a>
-      </div>
+      <div class="actions" id="modalActions"></div>
     </div>
   </div>
 
@@ -658,13 +670,31 @@
       typeEl.textContent = type ? type.name : event.type;
 
       document.getElementById('modalTitle').textContent = event.title;
-      document.getElementById('modalMeta').innerHTML = `
-        <div class="row"><span class="label">時間</span><span>${event.date} · ${event.time || ''}</span></div>
-        <div class="row"><span class="label">地點</span><span>${event.location || ''}</span></div>
-      `;
+
+      const metaRows = [
+        `<div class="row"><span class="label">時間</span><span>${event.date} · ${event.time || ''}</span></div>`,
+        `<div class="row"><span class="label">地點</span><span>${event.location || ''}</span></div>`,
+      ];
+      if (event.organizer) {
+        metaRows.push(`<div class="row"><span class="label">主辦</span><span>${escapeHtml(event.organizer)}</span></div>`);
+      }
+      document.getElementById('modalMeta').innerHTML = metaRows.join('');
       document.getElementById('modalDesc').textContent = event.description || '';
-      document.getElementById('modalLink').href = event.link || '#';
-      document.getElementById('modalMapLink').href = `index.html#${event.id}`;
+
+      // 動態 actions
+      const buttons = [];
+      if (event.needsRegistration && event.registrationLink) {
+        buttons.push(`<a href="${event.registrationLink}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        if (event.link) buttons.push(`<a href="${event.link}" class="secondary" target="_blank" rel="noopener">詳情</a>`);
+      } else if (event.needsRegistration === true) {
+        buttons.push(`<span class="reg-badge">⚠ 需報名</span>`);
+        if (event.link) buttons.push(`<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
+      } else {
+        if (event.link) buttons.push(`<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
+        if (event.needsRegistration === false) buttons.push(`<span class="reg-badge free">自由參加</span>`);
+      }
+      buttons.push(`<a href="index.html#${event.id}" class="secondary">在地圖上查看</a>`);
+      document.getElementById('modalActions').innerHTML = buttons.join('');
 
       document.getElementById('modal').classList.add('show');
     }
