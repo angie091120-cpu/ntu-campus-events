@@ -517,6 +517,7 @@
   </main>
 
   <script src="events.js"></script>
+  <script src="tracking.js"></script>
   <script>
     /* 程式邏輯（資料在 events.js） */
 
@@ -637,20 +638,20 @@
 
       // 「需要報名」+ 有報名連結 → 大按鈕「立即報名」
       if (event.needsRegistration && event.registrationLink) {
-        buttons.push(`<a href="${event.registrationLink}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
         if (event.link) {
-          buttons.push(`<a href="${event.link}" class="link secondary" target="_blank" rel="noopener">詳情</a>`);
+          buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link secondary" target="_blank" rel="noopener">詳情</a>`);
         }
       } else if (event.needsRegistration === true && !event.registrationLink) {
         // 標示需要報名但沒提供連結
         buttons.push(`<span class="reg-badge">⚠ 需報名（請洽主辦單位）</span>`);
         if (event.link) {
-          buttons.push(`<a href="${event.link}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
+          buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
         }
       } else {
         // 不需報名 / 未指定
         if (event.link) {
-          buttons.push(`<a href="${event.link}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
+          buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
         }
         if (event.needsRegistration === false) {
           buttons.push(`<span class="reg-badge free">自由參加</span>`);
@@ -790,6 +791,10 @@
       renderFilters();
       renderMarkers();
       handleHash();                              // 第一次進頁面時檢查 hash
+      // 回報訪客在地圖上看到所有活動（不限 active types，這頁進來代表整個地圖都被看到）
+      if (window.reportViews) {
+        window.reportViews(EVENTS.map(e => e.id));
+      }
     });
     window.addEventListener('hashchange', handleHash); // 之後 hash 改變也觸發
   </script>

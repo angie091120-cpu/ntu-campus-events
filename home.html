@@ -607,6 +607,7 @@
   </footer>
 
   <script src="events.js"></script>
+  <script src="tracking.js"></script>
   <script>
     const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const WEEKDAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
@@ -739,6 +740,13 @@
       renderStats();
       renderFeatured();
       renderWeek();
+      // 回報訪客看到了「即將發生的活動」
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const visibleIds = EVENTS
+        .filter(e => e.date && new Date(e.date) >= now)
+        .slice(0, 10)
+        .map(e => e.id);
+      if (window.reportViews) window.reportViews(visibleIds);
     });
   </script>
 </body>

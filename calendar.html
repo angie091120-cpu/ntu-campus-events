@@ -495,6 +495,7 @@
   </div>
 
   <script src="events.js"></script>
+  <script src="tracking.js"></script>
   <script>
     /* ════════════════════════════════════════════════
        狀態
@@ -684,13 +685,13 @@
       // 動態 actions
       const buttons = [];
       if (event.needsRegistration && event.registrationLink) {
-        buttons.push(`<a href="${event.registrationLink}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`);
-        if (event.link) buttons.push(`<a href="${event.link}" class="secondary" target="_blank" rel="noopener">詳情</a>`);
+        buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        if (event.link) buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="secondary" target="_blank" rel="noopener">詳情</a>`);
       } else if (event.needsRegistration === true) {
         buttons.push(`<span class="reg-badge">⚠ 需報名</span>`);
-        if (event.link) buttons.push(`<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
+        if (event.link) buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
       } else {
-        if (event.link) buttons.push(`<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
+        if (event.link) buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
         if (event.needsRegistration === false) buttons.push(`<span class="reg-badge free">自由參加</span>`);
       }
       buttons.push(`<a href="index.html#${event.id}" class="secondary">在地圖上查看</a>`);

@@ -419,6 +419,7 @@
   </main>
 
   <script src="events.js"></script>
+  <script src="tracking.js"></script>
   <script>
     const state = {
       activeTypes: new Set(EVENT_TYPES.map(t => t.id)),
@@ -520,16 +521,16 @@
         if (event.needsRegistration && event.registrationLink) {
           actionBtns = `
             <a href="${event.registrationLink}" class="primary" target="_blank" rel="noopener">立即報名 →</a>
-            ${event.link ? `<a href="${event.link}" class="secondary" target="_blank" rel="noopener">詳情</a>` : ''}
+            ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="secondary" target="_blank" rel="noopener">詳情</a>` : ''}
             <a href="index.html#${event.id}" class="secondary">地圖</a>`;
         } else if (event.needsRegistration === true) {
           actionBtns = `
             <span class="reg-badge">⚠ 需報名</span>
-            ${event.link ? `<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
+            ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
             <a href="index.html#${event.id}" class="secondary">地圖</a>`;
         } else {
           actionBtns = `
-            ${event.link ? `<a href="${event.link}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
+            ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
             ${event.needsRegistration === false ? `<span class="reg-badge free">自由參加</span>` : ''}
             <a href="index.html#${event.id}" class="secondary">地圖</a>`;
         }
@@ -575,6 +576,10 @@
       state.activeTypes = new Set(EVENT_TYPES.map(t => t.id));
       renderChips();
       renderList();
+      // 回報訪客看到的所有活動
+      if (window.reportViews) {
+        window.reportViews(EVENTS.map(e => e.id));
+      }
     });
   </script>
 </body>

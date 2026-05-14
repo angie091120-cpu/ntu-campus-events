@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>後台 · 校園活動</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg: #F5F1E8; --bg-deep: #EFEADE;
+      --surface: #FFFFFF;
+      --text: #1A1815; --text-muted: #6B665C; --text-faint: #B5AE9E;
+      --border: #DED8C5; --border-soft: #EBE6D8;
+      --accent: #2C5530;
+      --err: #B82E2E; --warn: #D97342; --info: #2E5BBA;
+
+      --c-lecture: #2E5BBA;
+      --c-workshop: #D97342;
+      --c-club: #7B4FB8;
+      --c-performance: #C73E7E;
+      --c-sports: #4A7C3A;
+      --c-competition: #B82E2E;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans TC', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 18px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 20px; font-weight: 700;
+      letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .brand .badge {
+      background: var(--accent);
+      color: white;
+      font-family: 'Noto Sans TC';
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.06em;
+    }
+    .top-right {
+      display: flex; gap: 12px; align-items: center;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .top-right a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+    }
+    .top-right a:hover { background: var(--bg); color: var(--text); }
+    .refresh-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .refresh-btn:hover { background: var(--bg); }
+
+    main { max-width: 1180px; margin: 0 auto; padding: 36px; }
+
+    .status {
+      margin-bottom: 28px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text-faint);
+    }
+    .status.ok .dot { background: var(--accent); }
+    .status.err { color: var(--err); }
+    .status.err .dot { background: var(--err); }
+    .status.loading .dot { background: var(--info); animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ─── 總覽卡片 ─── */
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 22px 24px;
+      border: 1px solid var(--border-soft);
+    }
+    .stat-card .label {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .stat-card .num {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card .sub {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-top: 6px;
+    }
+    .stat-card.accent .num { color: var(--accent); }
+
+    /* ─── 區塊標題 ─── */
+    .section {
+      margin-bottom: 36px;
+    }
+    .section h2 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .section .desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    /* ─── 排行表 ─── */
+    .ranking {
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+    .ranking-head {
+      display: grid;
+      grid-template-columns: 36px 1fr 90px 90px 100px;
+      padding: 12px 24px;
+      background: var(--bg);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .ranking-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 90px 90px 100px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border-soft);
+      align-items: center;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    .ranking-row:last-child { border-bottom: none; }
+    .ranking-row:hover { background: var(--bg); }
+    .ranking-row .rank {
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 700;
+      color: var(--text-faint);
+      font-variant-numeric: tabular-nums;
+    }
+    .ranking-row.top-3 .rank { color: var(--accent); font-size: 16px; }
+
+    .ranking-row .title-cell {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ranking-row .type-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ranking-row .title-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ranking-row .num-cell {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .ranking-row .num-cell.zero { color: var(--text-faint); }
+    .ranking-row .rate-cell {
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .ranking-row .rate-cell.good { color: var(--accent); font-weight: 500; }
+    .ranking-row .rate-cell.poor { color: var(--warn); }
+
+    .ranking-empty {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* ─── 類型分佈 ─── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .type-card {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 16px 18px;
+      border: 1px solid var(--border-soft);
+      border-left: 4px solid var(--text);
+    }
+    .type-card .name {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .type-card .nums {
+      display: flex;
+      gap: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+    .type-card .nums div { font-size: 12px; color: var(--text-muted); }
+    .type-card .nums div strong {
+      color: var(--text);
+      font-family: 'Noto Serif TC', serif;
+      font-size: 22px;
+      font-weight: 700;
+      display: block;
+      line-height: 1.1;
+    }
+
+    /* ─── 入口卡 ─── */
+    .external-links {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px 24px;
+      border: 1px solid var(--border-soft);
+      margin-bottom: 36px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .external-links .lead {
+      flex: 1;
+      min-width: 200px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .external-links a {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .external-links a:hover { background: var(--bg-deep); }
+
+    /* ─── Modal: 輸入金鑰 ─── */
+    .auth-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .auth-modal .box {
+      background: var(--surface);
+      padding: 32px;
+      border-radius: 12px;
+      max-width: 380px;
+      width: 90%;
+    }
+    .auth-modal h3 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .auth-modal p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    .auth-modal input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .auth-modal input:focus { outline: none; border-color: var(--accent); }
+    .auth-modal .err-msg {
+      color: var(--err);
+      font-size: 12px;
+      margin-bottom: 10px;
+      min-height: 18px;
+    }
+    .auth-modal button {
+      width: 100%;
+      padding: 11px;
+      background: var(--text);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .auth-modal button:hover { background: var(--accent); }
+
+    @media (max-width: 720px) {
+      main { padding: 24px 20px; }
+      .overview { grid-template-columns: repeat(2, 1fr); }
+      .ranking-head, .ranking-row {
+        grid-template-columns: 28px 1fr 60px 60px;
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+      .ranking-row .rate-cell { display: none; }
+      .ranking-head .rate-col { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      校園活動
+      <span class="badge">ADMIN</span>
+    </div>
+    <div class="top-right">
+      <a href="home.html">← 回到網站</a>
+      <button class="refresh-btn" id="refreshBtn">↻ 重新整理</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="status loading" id="status">
+      <span class="dot"></span>
+      <span id="statusText">正在載入統計資料...</span>
+    </div>
+
+    <!-- 總覽 -->
+    <div class="overview" id="overview">
+      <div class="stat-card accent">
+        <div class="label">總點擊</div>
+        <div class="num" id="totalClicks">—</div>
+        <div class="sub">使用者點開活動連結的次數</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">總曝光</div>
+        <div class="num" id="totalViews">—</div>
+        <div class="sub">活動在頁面上被顯示的次數</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">整體點閱率</div>
+        <div class="num" id="ctrAll">—</div>
+        <div class="sub">點擊 / 曝光（越高越受歡迎）</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">活動總數</div>
+        <div class="num" id="eventCount">—</div>
+        <div class="sub">目前試算表中的活動筆數</div>
+      </div>
+    </div>
+
+    <!-- Vercel Analytics 連結 -->
+    <div class="external-links">
+      <div class="lead">
+        想看訪客數、來源、裝置、瀏覽器分布？這些在 Vercel Analytics 後台：
+      </div>
+      <a href="https://vercel.com/dashboard" target="_blank" rel="noopener">前往 Vercel Analytics →</a>
+    </div>
+
+    <!-- 點擊排行 -->
+    <section class="section">
+      <h2>活動點擊排行</h2>
+      <div class="desc">點擊數最高 → 最低，看哪些活動最吸引人</div>
+      <div class="ranking" id="clickRanking">
+        <div class="ranking-head">
+          <div>#</div>
+          <div>活動</div>
+          <div>點擊</div>
+          <div>曝光</div>
+          <div class="rate-col">點閱率</div>
+        </div>
+        <div id="clickRows"></div>
+      </div>
+    </section>
+
+    <!-- 高曝光低點擊（潛在受歡迎/不受歡迎活動） -->
+    <section class="section">
+      <h2>需要關注的活動</h2>
+      <div class="desc">曝光高但點擊率低，可能標題或描述需要調整</div>
+      <div class="ranking" id="lowCtrRanking">
+        <div class="ranking-head">
+          <div>#</div>
+          <div>活動</div>
+          <div>點擊</div>
+          <div>曝光</div>
+          <div class="rate-col">點閱率</div>
+        </div>
+        <div id="lowCtrRows"></div>
+      </div>
+    </section>
+
+    <!-- 類型分佈 -->
+    <section class="section">
+      <h2>類型表現</h2>
+      <div class="desc">按活動類型彙總點擊與曝光</div>
+      <div class="type-grid" id="typeGrid"></div>
+    </section>
+  </main>
+
+  <!-- 金鑰輸入 modal -->
+  <div class="auth-modal" id="authModal" style="display:none">
+    <div class="box">
+      <h3>後台金鑰</h3>
+      <p>請輸入後台 Admin Key 才能查看統計資料。</p>
+      <input type="password" id="adminKeyInput" placeholder="ADMIN_KEY" autofocus>
+      <div class="err-msg" id="authErr"></div>
+      <button id="authSubmit">進入</button>
+    </div>
+  </div>
+
+  <script src="events.js"></script>
+  <script>
+    /* ════════════════════════════════════════════════
+       認證：簡單 localStorage 記住 admin key
+       ════════════════════════════════════════════════ */
+    let adminKey = localStorage.getItem('admin_key') || '';
+
+    function showAuthModal() {
+      document.getElementById('authModal').style.display = 'flex';
+      document.getElementById('adminKeyInput').focus();
+    }
+    function hideAuthModal() {
+      document.getElementById('authModal').style.display = 'none';
+    }
+    document.getElementById('authSubmit').addEventListener('click', tryAuth);
+    document.getElementById('adminKeyInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tryAuth();
+    });
+    async function tryAuth() {
+      const k = document.getElementById('adminKeyInput').value.trim();
+      if (!k) return;
+      adminKey = k;
+      hideAuthModal();
+      const ok = await loadStats();
+      if (ok) {
+        localStorage.setItem('admin_key', k);
+      } else {
+        adminKey = '';
+        document.getElementById('authErr').textContent = '金鑰錯誤或伺服器有問題，請再試一次';
+        showAuthModal();
+      }
+    }
+
+    /* ════════════════════════════════════════════════
+       載入並渲染
+       ════════════════════════════════════════════════ */
+    let statsData = null;
+
+    async function loadStats() {
+      setStatus('loading', '正在載入統計資料...');
+      try {
+        const url = adminKey ? `/api/stats?key=${encodeURIComponent(adminKey)}` : '/api/stats';
+        const res = await fetch(url);
+        if (res.status === 401) {
+          setStatus('err', '需要輸入金鑰');
+          showAuthModal();
+          return false;
+        }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        statsData = await res.json();
+        setStatus('ok', `資料已更新 · ${new Date().toLocaleString('zh-TW')}`);
+        renderAll();
+        return true;
+      } catch (err) {
+        console.error('[admin] load stats fail', err);
+        setStatus('err', '載入失敗：' + err.message + '（如果 API 還沒部署，會看到這個訊息）');
+        return false;
+      }
+    }
+    function setStatus(level, text) {
+      const el = document.getElementById('status');
+      el.className = 'status ' + level;
+      document.getElementById('statusText').textContent = text;
+    }
+
+    /* 渲染：總覽 */
+    function renderOverview() {
+      const tc = statsData.totals.clicks;
+      const tv = statsData.totals.views;
+      document.getElementById('totalClicks').textContent = tc.toLocaleString();
+      document.getElementById('totalViews').textContent = tv.toLocaleString();
+      document.getElementById('ctrAll').textContent = tv > 0 ? (tc / tv * 100).toFixed(1) + '%' : '—';
+      document.getElementById('eventCount').textContent = EVENTS.length;
+    }
+
+    /* 把 stats 和 EVENTS 合併 */
+    function combinedEvents() {
+      return EVENTS.map(e => {
+        const s = statsData.events[e.id] || { clicks: 0, views: 0 };
+        const ctr = s.views > 0 ? (s.clicks / s.views) : 0;
+        return { ...e, clicks: s.clicks, views: s.views, ctr };
+      });
+    }
+
+    /* 渲染：點擊排行 */
+    function renderClickRanking() {
+      const all = combinedEvents();
+      const sorted = all.slice().sort((a, b) => b.clicks - a.clicks);
+      const top = sorted.slice(0, 20);
+      const container = document.getElementById('clickRows');
+      if (top.length === 0 || top[0].clicks === 0) {
+        container.innerHTML = '<div class="ranking-empty">還沒有任何點擊資料</div>';
+        return;
+      }
+      container.innerHTML = top.map((e, i) => renderRow(e, i + 1)).join('');
+    }
+
+    /* 渲染：低點擊率排行（曝光 >= 5 且 ctr 低） */
+    function renderLowCtrRanking() {
+      const all = combinedEvents();
+      const candidates = all.filter(e => e.views >= 5);
+      candidates.sort((a, b) => a.ctr - b.ctr);
+      const top = candidates.slice(0, 10);
+      const container = document.getElementById('lowCtrRows');
+      if (top.length === 0) {
+        container.innerHTML = '<div class="ranking-empty">曝光資料還不夠，等更多訪客來再看看</div>';
+        return;
+      }
+      container.innerHTML = top.map((e, i) => renderRow(e, i + 1, true)).join('');
+    }
+
+    function renderRow(e, rank, isLowCtr = false) {
+      const type = EVENT_TYPES.find(t => t.id === e.type) || { color: '#999', name: e.type };
+      const ctrText = e.views > 0 ? (e.ctr * 100).toFixed(1) + '%' : '—';
+      let ctrCls = '';
+      if (e.views >= 5) {
+        if (e.ctr >= 0.15) ctrCls = 'good';
+        else if (e.ctr < 0.05) ctrCls = 'poor';
+      }
+      return `
+        <div class="ranking-row ${rank <= 3 && !isLowCtr ? 'top-3' : ''}">
+          <div class="rank">${rank}</div>
+          <div class="title-cell">
+            <span class="type-dot" style="background:${type.color}"></span>
+            <span class="title-text" title="${escapeAttr(e.title)}">${escapeHtml(e.title)}</span>
+          </div>
+          <div class="num-cell ${e.clicks === 0 ? 'zero' : ''}">${e.clicks}</div>
+          <div class="num-cell ${e.views === 0 ? 'zero' : ''}">${e.views}</div>
+          <div class="rate-cell ${ctrCls}">${ctrText}</div>
+        </div>
+      `;
+    }
+
+    /* 渲染：類型分佈 */
+    function renderTypeGrid() {
+      const grid = document.getElementById('typeGrid');
+      const byType = {};
+      EVENT_TYPES.forEach(t => byType[t.id] = { ...t, clicks: 0, views: 0, count: 0 });
+
+      combinedEvents().forEach(e => {
+        if (byType[e.type]) {
+          byType[e.type].clicks += e.clicks;
+          byType[e.type].views += e.views;
+          byType[e.type].count += 1;
+        }
+      });
+
+      grid.innerHTML = Object.values(byType).map(t => {
+        const ctr = t.views > 0 ? (t.clicks / t.views * 100).toFixed(1) + '%' : '—';
+        return `
+          <div class="type-card" style="border-left-color:${t.color}">
+            <div class="name">${escapeHtml(t.name)} <span style="color:var(--text-faint);font-size:11px;font-weight:400">(${t.count} 場)</span></div>
+            <div class="nums">
+              <div>點擊<strong>${t.clicks}</strong></div>
+              <div>曝光<strong>${t.views}</strong></div>
+              <div>CTR<strong>${ctr}</strong></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderAll() {
+      renderOverview();
+      renderClickRanking();
+      renderLowCtrRanking();
+      renderTypeGrid();
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    /* 重新整理按鈕 */
+    document.getElementById('refreshBtn').addEventListener('click', loadStats);
+
+    /* 啟動 */
+    loadEvents().then(loadStats);
+  </script>
+</body>
+</html>
