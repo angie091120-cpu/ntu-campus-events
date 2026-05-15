@@ -239,6 +239,9 @@ const FALLBACK_BUILDINGS = [
   { name: '外教中心', x: 0.602, y: 0.306 },
   { name: '語文大樓', x: 0.624, y: 0.291 },
   { name: '舊體後舞台', x: 0.478, y: 0.351 },
+  { name: '新生教學館', x: 0.532, y: 0.351 },
+  { name: '數學研究中心', x: 0.536, y: 0.331 },
+  { name: '生化科學研究所', x: 0.539, y: 0.37 },
 ];
 
 
@@ -412,16 +415,45 @@ function lookupBuilding(name) {
   if (!name) return null;
   const target = normalizeName(name);
 
-  // 1. 完全匹配
+  // 1. 完全匹配 → 直接回傳
   for (const b of BUILDINGS) {
     if (normalizeName(b.name) === target) return b;
   }
-  // 2. 部份匹配（地點包含建築名 或 建築名包含地點）
+
+  // 2. 對所有候選評分，取最高分
+  // 三種匹配方式：
+  //   (a) target 包含完整建築名（地點寫得長，例：「博雅教學館 102」）→ 最強
+  //   (b) 建築名包含 target（地點寫得短，例：「博雅」→「博雅教學館」）
+  //   (c) 共同前綴匹配（例：「博雅 102」開頭是「博雅」，「博雅教學館」也是）
+  let bestMatch = null;
+  let bestScore = 0;
+
   for (const b of BUILDINGS) {
     const bn = normalizeName(b.name);
-    if (target.includes(bn) || bn.includes(target)) return b;
+    let score = 0;
+
+    if (target.includes(bn)) {
+      // (a) 建築名越長代表 target 命中越多字 → 越具體
+      score = bn.length * 1000;
+    } else if (bn.includes(target)) {
+      // (b) 建築名越短代表 target 佔比越高、越精準
+      score = target.length * 1000 - (bn.length - target.length) * 5;
+    } else {
+      // (c) 共同前綴匹配（要求至少 2 字共同前綴，避免雜訊）
+      let common = 0;
+      const minLen = Math.min(target.length, bn.length);
+      while (common < minLen && target[common] === bn[common]) common++;
+      if (common >= 2) {
+        score = common * 100 - (bn.length + target.length - 2 * common) * 0.5;
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = b;
+    }
   }
-  return null;
+  return bestMatch;
 }
 
 // 給 diagnostic.html 用的 alias
