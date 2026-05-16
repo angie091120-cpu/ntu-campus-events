@@ -36,11 +36,34 @@
       color: var(--text);
       min-height: 100vh;
       line-height: 1.6;
+      position: relative;
     }
+
+    /* 滿版背景紋路：淡色椰葉散點 + 米紙紋理
+       用 SVG data URI 平鋪，超輕量、零外部請求
+       透明度極低，不影響文字判讀 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><g fill='%232C5530' fill-opacity='0.04'><path d='M 30 40 Q 20 30 10 35 Q 15 42 30 40'/><path d='M 30 40 Q 40 30 50 35 Q 45 42 30 40'/><path d='M 30 40 Q 22 22 18 8 Q 28 22 31 38'/><path d='M 30 40 Q 38 22 42 8 Q 32 22 29 38'/><circle cx='30' cy='40' r='1.5'/></g><g fill='%23B85A2B' fill-opacity='0.03'><path d='M 170 130 Q 160 120 150 125 Q 155 132 170 130'/><path d='M 170 130 Q 180 120 190 125 Q 185 132 170 130'/><path d='M 170 130 Q 162 112 158 98 Q 168 112 171 128'/><path d='M 170 130 Q 178 112 182 98 Q 172 112 169 128'/></g><g fill='%232C5530' fill-opacity='0.035'><path d='M 100 200 Q 90 190 80 195 Q 85 202 100 200'/><path d='M 100 200 Q 110 190 120 195 Q 115 202 100 200'/><path d='M 100 200 Q 92 182 88 168 Q 98 182 101 198'/></g></svg>");
+      background-size: 240px 240px;
+      background-repeat: repeat;
+    }
+
+    /* 大尺寸光暈裝飾移除，因為 hero SVG 內部已含 warm/sage glow，
+       下方區塊保持乾淨，讓內容卡片更突出 */
+
+    /* 確保所有實際內容都在背景之上 */
+    header, main, footer { position: relative; z-index: 1; }
 
     /* ───── Header（跟其他頁一致） ───── */
     header {
-      background: var(--surface);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-soft);
       padding: 16px 36px;
       display: flex;
@@ -84,25 +107,57 @@
     main { max-width: 1180px; margin: 0 auto; padding: 0 36px; }
 
     /* ═══════════ Hero ═══════════ */
+    /* 用 negative margin 讓 hero 突破 main 的 1180px 限制，背景延伸到 viewport 兩邊 */
     .hero {
-      padding: 96px 0 80px;
       position: relative;
+      margin: 0 calc(50% - 50vw);
+      padding: 0;
+      min-height: 560px;
       overflow: hidden;
+      isolation: isolate;
     }
-    .hero::before {
+    /* 背景 SVG：絕對定位填滿整個 hero */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .hero-bg-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* 為了讓背景下緣與下方區塊有自然漸層銜接，加一條柔和漸出 */
+    .hero::after {
       content: "";
       position: absolute;
-      top: -20%; right: -10%;
-      width: 480px; height: 480px;
-      background: radial-gradient(circle, rgba(44, 85, 48, 0.06), transparent 70%);
+      left: 0; right: 0; bottom: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      z-index: 1;
       pointer-events: none;
+    }
+    /* 文字區：限縮在 main 同寬度，且置於背景之上 */
+    .hero-text {
+      position: relative;
+      z-index: 2;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 100px 36px 110px;
+      max-width: calc(1180px - 0px);
+      box-sizing: border-box;
+    }
+    .hero-text > * {
+      max-width: 560px; /* 文字本身只佔左半邊，右半邊讓建築插畫露出 */
     }
     .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 6px 14px;
-      background: var(--surface);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(6px);
       border: 1px solid var(--border);
       border-radius: 999px;
       font-size: 12px;
@@ -122,22 +177,20 @@
     }
     .hero h1 {
       font-family: 'Noto Serif TC', serif;
-      font-size: 56px;
+      font-size: 48px;
       font-weight: 900;
-      line-height: 1.2;
+      line-height: 1.25;
       letter-spacing: 0.01em;
-      margin-bottom: 24px;
-      max-width: 720px;
+      margin-bottom: 22px;
     }
     .hero h1 .hl {
       background: linear-gradient(180deg, transparent 60%, rgba(44, 85, 48, 0.18) 60%);
       padding: 0 4px;
     }
     .hero p {
-      font-size: 17px;
+      font-size: 16px;
       color: var(--text-muted);
-      max-width: 580px;
-      margin-bottom: 36px;
+      margin-bottom: 32px;
       line-height: 1.7;
     }
     .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -431,6 +484,7 @@
       border-radius: 14px;
       border: 1px solid var(--border-soft);
       padding: 28px 0;
+      margin-top: 0;
       margin-bottom: 80px;
     }
     .stat {
@@ -455,12 +509,11 @@
 
     /* ═══════════ Footer ═══════════ */
     footer {
-      padding: 36px 36px 48px;
+      padding: 24px 36px 40px;
       text-align: center;
       color: var(--text-faint);
       font-size: 12px;
-      border-top: 1px solid var(--border-soft);
-      background: var(--surface);
+      background: transparent;
     }
     footer a { color: var(--text-muted); text-decoration: none; }
     footer a:hover { color: var(--text); }
@@ -471,8 +524,14 @@
       header { padding: 14px 20px; }
       nav { gap: 18px; }
       nav a { font-size: 13px; }
-      .hero { padding: 56px 0 48px; }
-      .hero h1 { font-size: 36px; }
+      .hero {
+        min-height: 420px;
+      }
+      .hero-text {
+        padding: 60px 20px 80px;
+      }
+      .hero-text > * { max-width: 100%; }
+      .hero h1 { font-size: 32px; }
       .hero p { font-size: 15px; }
       .section-head h2 { font-size: 22px; }
       .entry-grid { grid-template-columns: 1fr; }
@@ -506,15 +565,327 @@
   <main>
     <!-- ═══════════ Hero ═══════════ -->
     <section class="hero">
-      <div class="hero-badge">
-        <span class="dot"></span>
-        <span id="liveCount">即時更新中</span>
+      <div class="hero-text">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          <span id="liveCount">即時更新中</span>
+        </div>
+        <h1>校園裡正在發生的<br>都在<span class="hl">這一頁</span>。</h1>
+        <p>整合台大各系所、社團與學生組織的活動資訊，讓你不用在十幾個粉專之間切換。看地圖、查列表、翻行事曆，三種方式找到你關心的活動。</p>
+        <div class="hero-actions">
+          <a href="index.html" class="btn primary">查看校園地圖 →</a>
+          <a href="events.html" class="btn secondary">瀏覽全部活動</a>
+        </div>
       </div>
-      <h1>校園裡正在發生的<br>都在<span class="hl">這一頁</span>。</h1>
-      <p>整合台大各系所、社團與學生組織的活動資訊，讓你不用在十幾個粉專之間切換。看地圖、查列表、翻行事曆，三種方式找到你關心的活動。</p>
-      <div class="hero-actions">
-        <a href="index.html" class="btn primary">查看校園地圖 →</a>
-        <a href="events.html" class="btn secondary">瀏覽全部活動</a>
+
+      <div class="hero-bg">
+          <svg class="hero-bg-svg" aria-hidden="true" viewBox="0 0 1920 900" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-label="Warm Morandi campus background illustration">
+              <defs>
+                <!-- Warm Morandi palette as gradients/colors -->
+                <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%"   stop-color="#f8f2e5"/>
+                  <stop offset="55%"  stop-color="#f4ead4"/>
+                  <stop offset="100%" stop-color="#efe1c5"/>
+                </linearGradient>
+
+                <linearGradient id="lawn" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%"   stop-color="#dcd5a1"/>
+                  <stop offset="100%" stop-color="#b6b079"/>
+                </linearGradient>
+
+                <linearGradient id="lawnLeftFade" x1="0" x2="1" y1="0" y2="0">
+                  <!-- subtly lift the left side so dark text stays readable -->
+                  <stop offset="0%"   stop-color="#e6dfa8" stop-opacity="0.5"/>
+                  <stop offset="45%"  stop-color="#e6dfa8" stop-opacity="0"/>
+                </linearGradient>
+
+                <radialGradient id="warmGlow" cx="0.72" cy="0.42" r="0.42">
+                  <stop offset="0%"  stop-color="#f3e0c5" stop-opacity="0.6"/>
+                  <stop offset="80%" stop-color="#f3e0c5" stop-opacity="0"/>
+                </radialGradient>
+
+                <radialGradient id="sageGlow" cx="0.18" cy="0.30" r="0.5">
+                  <stop offset="0%"  stop-color="#dde4cb" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#dde4cb" stop-opacity="0"/>
+                </radialGradient>
+
+                <radialGradient id="cloudFade" cx="0.5" cy="0.55" r="0.55">
+                  <stop offset="0%"  stop-color="#fffaee" stop-opacity="0.98"/>
+                  <stop offset="80%" stop-color="#fffaee" stop-opacity="0.55"/>
+                  <stop offset="100%" stop-color="#fffaee" stop-opacity="0"/>
+                </radialGradient>
+
+                <pattern id="bricks" x="0" y="0" width="26" height="12" patternUnits="userSpaceOnUse">
+                  <rect width="26" height="12" fill="#cc8a6c"/>
+                  <rect x="13" y="0" width="0.6" height="6" fill="#a36a51" opacity="0.4"/>
+                  <rect x="0" y="6" width="26" height="0.6" fill="#a36a51" opacity="0.45"/>
+                </pattern>
+                <pattern id="bricksDark" x="0" y="0" width="26" height="12" patternUnits="userSpaceOnUse">
+                  <rect width="26" height="12" fill="#a36a51"/>
+                  <rect x="13" y="0" width="0.6" height="6" fill="#82503b" opacity="0.5"/>
+                  <rect x="0" y="6" width="26" height="0.6" fill="#82503b" opacity="0.5"/>
+                </pattern>
+
+                <!-- Palm symbol -->
+                <symbol id="palm" viewBox="-60 0 120 360" overflow="visible">
+                  <path d="M -6 360 Q -4 200 -2 40 L 6 40 Q 8 200 10 360 Z" fill="#c8a684"/>
+                  <g fill="#9c7a5b" opacity="0.55">
+                    <ellipse cx="2" cy="80"  rx="9"   ry="2.2"/>
+                    <ellipse cx="2" cy="120" rx="9.5" ry="2.2"/>
+                    <ellipse cx="2" cy="160" rx="10"  ry="2.2"/>
+                    <ellipse cx="2" cy="205" rx="10.5" ry="2.2"/>
+                    <ellipse cx="2" cy="250" rx="11"  ry="2.2"/>
+                    <ellipse cx="2" cy="295" rx="11.5" ry="2.2"/>
+                    <ellipse cx="2" cy="338" rx="12"  ry="2.2"/>
+                  </g>
+                  <g fill="#7d8a60">
+                    <path d="M 2 40 Q -30 5 -58 20 Q -32 18 2 42 Z"/>
+                    <path d="M 2 40 Q 30 5 58 20 Q 32 18 2 42 Z"/>
+                    <path d="M 2 40 Q -45 35 -55 70 Q -28 50 4 46 Z"/>
+                    <path d="M 2 40 Q 45 35 55 70 Q 28 50 0 46 Z"/>
+                  </g>
+                  <g fill="#aeb88f">
+                    <path d="M 2 40 Q -20 0 -40 -8 Q -22 12 2 42 Z"/>
+                    <path d="M 2 40 Q 20 0 40 -8 Q 22 12 2 42 Z"/>
+                    <path d="M 2 40 Q -50 22 -62 48 Q -30 35 2 44 Z"/>
+                    <path d="M 2 40 Q 50 22 62 48 Q 30 35 2 44 Z"/>
+                    <path d="M 2 40 Q -10 -10 0 -28 Q 6 -8 6 44 Z"/>
+                    <path d="M 2 40 Q 14 -8 18 -22 Q 8 0 6 44 Z"/>
+                    <path d="M 2 40 Q -14 -8 -18 -22 Q -8 0 -2 44 Z"/>
+                  </g>
+                  <g fill="#9c7a5b">
+                    <circle cx="-4" cy="46" r="3"/>
+                    <circle cx="6" cy="48" r="3"/>
+                    <circle cx="0" cy="50" r="3"/>
+                  </g>
+                </symbol>
+
+                <!-- Hedge symbol -->
+                <symbol id="hedge" viewBox="0 0 200 110" overflow="visible">
+                  <path d="M 0 110 Q 10 60 30 55 Q 45 30 65 40 Q 85 18 110 32 Q 135 22 155 42 Q 175 35 190 60 Q 200 70 200 110 Z" fill="#aeb88f"/>
+                  <path d="M 0 110 Q 10 75 30 70 Q 45 50 65 58 Q 85 42 110 52 Q 135 44 155 60 Q 175 55 190 75 Q 200 85 200 110 Z" fill="#828d65" opacity="0.5"/>
+                </symbol>
+
+                <!-- Distant tree silhouette (calm, low-contrast) -->
+                <symbol id="bush" viewBox="0 0 160 90" overflow="visible">
+                  <path d="M 0 90 Q 12 50 36 46 Q 56 24 80 36 Q 108 22 128 42 Q 150 36 160 60 L 160 90 Z" fill="#b9bf93" opacity="0.7"/>
+                </symbol>
+              </defs>
+
+              <!-- ============== BACKGROUND BASE ============== -->
+              <!-- sky -->
+              <rect x="0" y="0" width="1920" height="640" fill="url(#sky)"/>
+              <!-- warm glow behind the building (right) -->
+              <rect x="0" y="0" width="1920" height="900" fill="url(#warmGlow)"/>
+              <!-- soft sage glow on left -->
+              <rect x="0" y="0" width="1920" height="900" fill="url(#sageGlow)"/>
+
+              <!-- ============== CLOUDS (sparse, mostly right & upper) ============== -->
+              <g>
+                <ellipse cx="220"  cy="140" rx="200" ry="34" fill="url(#cloudFade)" opacity="0.55"/>
+                <ellipse cx="540"  cy="110" rx="170" ry="28" fill="url(#cloudFade)" opacity="0.6"/>
+                <ellipse cx="880"  cy="90"  rx="220" ry="32" fill="url(#cloudFade)" opacity="0.7"/>
+                <ellipse cx="1280" cy="120" rx="240" ry="36" fill="url(#cloudFade)"/>
+                <ellipse cx="1620" cy="80"  rx="200" ry="28" fill="url(#cloudFade)"/>
+                <ellipse cx="1820" cy="170" rx="180" ry="30" fill="url(#cloudFade)" opacity="0.85"/>
+                <ellipse cx="120"  cy="260" rx="180" ry="22" fill="url(#cloudFade)" opacity="0.5"/>
+              </g>
+
+              <!-- ============== DISTANT HORIZON (very subtle) ============== -->
+              <g opacity="0.55">
+                <!-- distant bushes line — far horizon -->
+                <use href="#bush" x="-40"   y="565" width="280" height="80"/>
+                <use href="#bush" x="180"   y="570" width="260" height="75"/>
+                <use href="#bush" x="380"   y="568" width="300" height="78"/>
+                <use href="#bush" x="640"   y="572" width="280" height="72"/>
+                <use href="#bush" x="900"   y="568" width="320" height="80"/>
+                <use href="#bush" x="1200"  y="572" width="280" height="76"/>
+                <use href="#bush" x="1480"  y="568" width="320" height="78"/>
+                <use href="#bush" x="1740"  y="572" width="240" height="72"/>
+              </g>
+
+              <!-- ============== LEFT-SIDE CALM SCENE ============== -->
+              <!-- distant palms on far left edge, soft and quiet -->
+              <g opacity="0.35">
+                <use href="#palm" x="40"   y="300" width="110" height="320"/>
+                <use href="#palm" x="-20"  y="330" width="95"  height="280"/>
+              </g>
+
+              <!-- ============== BUILDING (right side) ============== -->
+              <g transform="translate(1080 320)">
+                <!-- side wings (back) -->
+                <rect x="-20" y="130" width="120" height="280" fill="url(#bricksDark)"/>
+                <rect x="440" y="130" width="120" height="280" fill="url(#bricksDark)"/>
+                <rect x="-20" y="124" width="120" height="10" fill="#dccaab"/>
+                <rect x="440" y="124" width="120" height="10" fill="#dccaab"/>
+                <g fill="#9b9285" opacity="0.9">
+                  <rect x="0"   y="160" width="18" height="28"/><rect x="30"  y="160" width="18" height="28"/><rect x="60"  y="160" width="18" height="28"/>
+                  <rect x="0"   y="210" width="18" height="28"/><rect x="30"  y="210" width="18" height="28"/><rect x="60"  y="210" width="18" height="28"/>
+                  <rect x="0"   y="260" width="18" height="28"/><rect x="30"  y="260" width="18" height="28"/><rect x="60"  y="260" width="18" height="28"/>
+                  <rect x="0"   y="310" width="18" height="28"/><rect x="30"  y="310" width="18" height="28"/><rect x="60"  y="310" width="18" height="28"/>
+                  <rect x="462" y="160" width="18" height="28"/><rect x="492" y="160" width="18" height="28"/><rect x="522" y="160" width="18" height="28"/>
+                  <rect x="462" y="210" width="18" height="28"/><rect x="492" y="210" width="18" height="28"/><rect x="522" y="210" width="18" height="28"/>
+                  <rect x="462" y="260" width="18" height="28"/><rect x="492" y="260" width="18" height="28"/><rect x="522" y="260" width="18" height="28"/>
+                  <rect x="462" y="310" width="18" height="28"/><rect x="492" y="310" width="18" height="28"/><rect x="522" y="310" width="18" height="28"/>
+                </g>
+
+                <!-- towers -->
+                <rect x="90" y="100" width="100" height="310" fill="url(#bricks)"/>
+                <rect x="350" y="100" width="100" height="310" fill="url(#bricks)"/>
+                <rect x="86" y="94" width="108" height="12" fill="#f6ecd4"/>
+                <rect x="346" y="94" width="108" height="12" fill="#f6ecd4"/>
+                <rect x="100" y="80" width="80" height="18" fill="url(#bricks)"/>
+                <rect x="360" y="80" width="80" height="18" fill="url(#bricks)"/>
+                <rect x="96" y="76" width="88" height="8" fill="#f6ecd4"/>
+                <rect x="356" y="76" width="88" height="8" fill="#f6ecd4"/>
+
+                <g fill="#9b9285">
+                  <rect x="105" y="130" width="22" height="34"/><rect x="153" y="130" width="22" height="34"/>
+                  <rect x="105" y="180" width="22" height="34"/><rect x="153" y="180" width="22" height="34"/>
+                  <rect x="105" y="230" width="22" height="34"/><rect x="153" y="230" width="22" height="34"/>
+                  <rect x="105" y="280" width="22" height="34"/><rect x="153" y="280" width="22" height="34"/>
+                  <rect x="105" y="335" width="22" height="34"/><rect x="153" y="335" width="22" height="34"/>
+                  <rect x="365" y="130" width="22" height="34"/><rect x="413" y="130" width="22" height="34"/>
+                  <rect x="365" y="180" width="22" height="34"/><rect x="413" y="180" width="22" height="34"/>
+                  <rect x="365" y="230" width="22" height="34"/><rect x="413" y="230" width="22" height="34"/>
+                  <rect x="365" y="280" width="22" height="34"/><rect x="413" y="280" width="22" height="34"/>
+                  <rect x="365" y="335" width="22" height="34"/><rect x="413" y="335" width="22" height="34"/>
+                </g>
+                <g fill="#d2c8b6" opacity="0.55">
+                  <rect x="105" y="130" width="6" height="34"/><rect x="153" y="130" width="6" height="34"/>
+                  <rect x="105" y="180" width="6" height="34"/><rect x="153" y="180" width="6" height="34"/>
+                  <rect x="105" y="230" width="6" height="34"/><rect x="153" y="230" width="6" height="34"/>
+                  <rect x="105" y="280" width="6" height="34"/><rect x="153" y="280" width="6" height="34"/>
+                  <rect x="365" y="130" width="6" height="34"/><rect x="413" y="130" width="6" height="34"/>
+                  <rect x="365" y="180" width="6" height="34"/><rect x="413" y="180" width="6" height="34"/>
+                  <rect x="365" y="230" width="6" height="34"/><rect x="413" y="230" width="6" height="34"/>
+                  <rect x="365" y="280" width="6" height="34"/><rect x="413" y="280" width="6" height="34"/>
+                </g>
+
+                <!-- center mass -->
+                <rect x="180" y="140" width="180" height="270" fill="url(#bricks)"/>
+
+                <!-- pediment -->
+                <path d="M 175 140 L 270 30 L 365 140 Z" fill="#f6ecd4"/>
+                <path d="M 175 140 L 270 30 L 365 140 Z" fill="none" stroke="#dccaab" stroke-width="3"/>
+                <rect x="170" y="138" width="200" height="8" fill="#f6ecd4"/>
+                <rect x="170" y="138" width="200" height="2" fill="#dccaab"/>
+                <path d="M 270 30 L 365 140 L 355 140 L 270 50 Z" fill="#dccaab" opacity="0.55"/>
+                <circle cx="270" cy="100" r="14" fill="#a36a51"/>
+                <circle cx="270" cy="100" r="10" fill="#9b9285"/>
+                <line x1="256" y1="100" x2="284" y2="100" stroke="#f6ecd4" stroke-width="1.5"/>
+                <line x1="270" y1="86" x2="270" y2="114" stroke="#f6ecd4" stroke-width="1.5"/>
+
+                <!-- big arch window -->
+                <g>
+                  <rect x="222" y="195" width="96" height="115" fill="#f6ecd4"/>
+                  <path d="M 222 195 Q 270 145 318 195 L 318 200 L 222 200 Z" fill="#f6ecd4"/>
+                  <rect x="232" y="210" width="76" height="100" fill="#9b9285"/>
+                  <path d="M 232 210 Q 270 168 308 210 Z" fill="#9b9285"/>
+                  <line x1="270" y1="170" x2="270" y2="310" stroke="#f6ecd4" stroke-width="2"/>
+                  <line x1="232" y1="240" x2="308" y2="240" stroke="#f6ecd4" stroke-width="2"/>
+                  <line x1="232" y1="270" x2="308" y2="270" stroke="#f6ecd4" stroke-width="2"/>
+                  <line x1="250" y1="210" x2="250" y2="310" stroke="#f6ecd4" stroke-width="1.2" opacity="0.55"/>
+                  <line x1="290" y1="210" x2="290" y2="310" stroke="#f6ecd4" stroke-width="1.2" opacity="0.55"/>
+                  <path d="M 236 215 Q 250 195 268 195 L 268 230 L 236 240 Z" fill="#d2c8b6" opacity="0.4"/>
+                </g>
+
+                <g fill="#9b9285">
+                  <rect x="195" y="220" width="18" height="28"/>
+                  <rect x="195" y="260" width="18" height="28"/>
+                  <rect x="327" y="220" width="18" height="28"/>
+                  <rect x="327" y="260" width="18" height="28"/>
+                </g>
+
+                <rect x="216" y="312" width="108" height="8" fill="#f6ecd4"/>
+                <rect x="216" y="320" width="108" height="3" fill="#dccaab"/>
+                <g stroke="#dccaab" stroke-width="1.2" fill="none">
+                  <line x1="230" y1="320" x2="230" y2="332"/>
+                  <line x1="246" y1="320" x2="246" y2="332"/>
+                  <line x1="262" y1="320" x2="262" y2="332"/>
+                  <line x1="278" y1="320" x2="278" y2="332"/>
+                  <line x1="294" y1="320" x2="294" y2="332"/>
+                  <line x1="310" y1="320" x2="310" y2="332"/>
+                </g>
+
+                <!-- arcade -->
+                <rect x="170" y="345" width="200" height="65" fill="#f6ecd4"/>
+                <rect x="170" y="345" width="200" height="4" fill="#dccaab"/>
+                <g fill="#82503b">
+                  <path d="M 190 410 L 190 380 Q 190 358 213 358 Q 236 358 236 380 L 236 410 Z"/>
+                  <path d="M 247 410 L 247 380 Q 247 355 270 355 Q 293 355 293 380 L 293 410 Z"/>
+                  <path d="M 304 410 L 304 380 Q 304 358 327 358 Q 350 358 350 380 L 350 410 Z"/>
+                </g>
+                <g fill="#dccaab">
+                  <rect x="210" y="356" width="6" height="8"/>
+                  <rect x="267" y="353" width="6" height="8"/>
+                  <rect x="324" y="356" width="6" height="8"/>
+                </g>
+                <rect x="230" y="410" width="80" height="6" fill="#f6ecd4"/>
+                <rect x="222" y="416" width="96" height="6" fill="#dccaab"/>
+                <rect x="214" y="422" width="112" height="6" fill="#f6ecd4"/>
+
+                <rect x="450" y="100" width="110" height="310" fill="#000" opacity="0.03"/>
+                <rect x="350" y="100" width="100" height="310" fill="#000" opacity="0.02"/>
+              </g>
+
+              <!-- ============== PALMS framing the building (right) ============== -->
+              <use href="#palm" x="970"  y="330" width="160" height="460"/>
+              <use href="#palm" x="1060" y="360" width="150" height="420"/>
+              <use href="#palm" x="1610" y="330" width="160" height="460"/>
+              <use href="#palm" x="1530" y="360" width="150" height="420"/>
+              <use href="#palm" x="1180" y="410" width="110" height="320"/>
+              <use href="#palm" x="1450" y="410" width="110" height="320"/>
+
+              <!-- ============== LAWN ============== -->
+              <rect x="0" y="640" width="1920" height="260" fill="url(#lawn)"/>
+              <!-- Subtle left lift for text legibility -->
+              <rect x="0" y="640" width="1920" height="260" fill="url(#lawnLeftFade)"/>
+
+              <!-- gentle lawn perspective lines (kept very faint) -->
+              <g stroke="#b6b079" stroke-width="2" opacity="0.22" fill="none">
+                <path d="M 0 720 Q 960 700 1920 720"/>
+                <path d="M 0 800 Q 960 780 1920 800"/>
+                <path d="M 0 870 Q 960 850 1920 870"/>
+              </g>
+
+              <!-- ============== HEDGES (right cluster, framing building base) ============== -->
+              <use href="#hedge" x="900"  y="600" width="420" height="180"/>
+              <use href="#hedge" x="1480" y="600" width="420" height="180"/>
+              <use href="#hedge" x="850"  y="660" width="380" height="180"/>
+              <use href="#hedge" x="1560" y="660" width="380" height="180"/>
+
+              <!-- center small tree (under building) -->
+              <g transform="translate(1360 690)">
+                <ellipse cx="0" cy="40" rx="22" ry="8" fill="#000" opacity="0.05"/>
+                <rect x="-3" y="-10" width="6" height="50" fill="#9c7a5b"/>
+                <path d="M 0 -10 Q -28 -20 -32 10 Q -10 0 0 30 Q 10 0 32 10 Q 28 -20 0 -10 Z" fill="#aeb88f"/>
+                <path d="M 0 -10 Q -22 -28 -10 -50 Q 0 -34 0 -10 Z" fill="#828d65"/>
+                <path d="M 0 -10 Q 22 -28 10 -50 Q 0 -34 0 -10 Z" fill="#aeb88f"/>
+              </g>
+
+              <!-- ============== LEFT SIDE — calm, low-contrast continuation ============== -->
+              <!-- A single distant small bush far left (anchor point) -->
+              <use href="#bush" x="80" y="650" width="180" height="60" opacity="0.5"/>
+              <use href="#bush" x="280" y="660" width="200" height="55" opacity="0.45"/>
+
+              <!-- tiny foreground hedge clump at far left to anchor composition (kept low) -->
+              <use href="#hedge" x="-40" y="780" width="320" height="130" opacity="0.85"/>
+
+              <!-- subtle grass tufts spread across (low contrast, decorative) -->
+              <g fill="#b6b079" opacity="0.4">
+                <path d="M 160 870 l 3 -10 l 2 10 z"/>
+                <path d="M 320 880 l 3 -10 l 2 10 z"/>
+                <path d="M 480 875 l 3 -12 l 2 12 z"/>
+                <path d="M 640 885 l 3 -10 l 2 10 z"/>
+                <path d="M 820 880 l 3 -10 l 2 10 z"/>
+                <path d="M 980 885 l 3 -12 l 2 12 z"/>
+                <path d="M 1160 880 l 3 -10 l 2 10 z"/>
+              </g>
+
+              <!-- gentle vignette to right edge so it doesn't feel cropped -->
+              <rect x="1820" y="0" width="100" height="900" fill="url(#warmGlow)" opacity="0.4"/>
+            </svg>
       </div>
     </section>
 
@@ -561,36 +932,91 @@
         </div>
       </div>
       <div class="entry-grid">
-        <a href="index.html" class="entry-card">
+        <a href="index.html" class="entry-card map-card">
           <div class="icon">
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 21s-7-7-7-12a7 7 0 0 1 14 0c0 5-7 12-7 12z"/>
-              <circle cx="12" cy="9" r="2.5"/>
+            <!-- 校園地圖：俯瞰 + 標記點 -->
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+              <!-- 地圖底圖（折疊紙效果） -->
+              <path d="M 6 12 L 22 8 L 38 14 L 50 10 L 50 44 L 38 48 L 22 42 L 6 46 Z"
+                    fill="#E8E0CB" stroke="#A39A7E" stroke-width="1.5"/>
+              <!-- 折線 -->
+              <path d="M 22 8 L 22 42 M 38 14 L 38 48" stroke="#A39A7E" stroke-width="1" stroke-dasharray="2 2"/>
+              <!-- 道路 -->
+              <path d="M 10 38 Q 22 24 36 28 T 46 18" stroke="#C4B998" stroke-width="2" fill="none"/>
+              <!-- 標記點 -->
+              <circle cx="16" cy="32" r="4" fill="#2E5BBA"/>
+              <circle cx="16" cy="32" r="1.5" fill="white"/>
+              <circle cx="30" cy="22" r="4" fill="#C73E7E"/>
+              <circle cx="30" cy="22" r="1.5" fill="white"/>
+              <circle cx="42" cy="32" r="4" fill="#D97342"/>
+              <circle cx="42" cy="32" r="1.5" fill="white"/>
             </svg>
           </div>
           <h3>校園地圖</h3>
           <p>在地圖上直接看活動發生的位置，篩選你感興趣的類型，視覺化找場地。</p>
           <span class="arrow">→</span>
         </a>
-        <a href="events.html" class="entry-card">
+
+        <a href="events.html" class="entry-card list-card">
           <div class="icon">
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
+            <!-- 活動列表：卡片堆疊 -->
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+              <!-- 卡片 3（最底） -->
+              <rect x="14" y="14" width="34" height="14" rx="3" fill="#EBE6D8" stroke="#A39A7E" stroke-width="1"/>
+              <!-- 卡片 2 -->
+              <rect x="11" y="22" width="34" height="14" rx="3" fill="#F5F1E8" stroke="#A39A7E" stroke-width="1"/>
+              <!-- 卡片 1（最上） -->
+              <rect x="8" y="30" width="34" height="18" rx="3" fill="#FFFFFF" stroke="#7A6E55" stroke-width="1.5"/>
+              <!-- 卡片 1 內容 -->
+              <rect x="12" y="34" width="4" height="4" rx="1" fill="#D97342"/>
+              <rect x="18" y="34.5" width="14" height="2" rx="1" fill="#1A1815"/>
+              <rect x="12" y="41" width="18" height="1.5" rx="0.75" fill="#B5AE9E"/>
+              <rect x="12" y="44" width="14" height="1.5" rx="0.75" fill="#B5AE9E"/>
             </svg>
           </div>
           <h3>活動列表</h3>
           <p>搜尋活動名稱、依類型篩選、依日期排序。最快找到特定一場活動。</p>
           <span class="arrow">→</span>
         </a>
-        <a href="calendar.html" class="entry-card">
+
+        <a href="calendar.html" class="entry-card cal-card">
           <div class="icon">
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="5" width="18" height="16" rx="2"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <line x1="8" y1="3" x2="8" y2="7"/>
-              <line x1="16" y1="3" x2="16" y2="7"/>
+            <!-- 行事曆：月曆網格 -->
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+              <!-- 月曆背板 -->
+              <rect x="8" y="12" width="40" height="36" rx="3" fill="#FFFFFF" stroke="#7A6E55" stroke-width="1.5"/>
+              <!-- 頭部（紅色） -->
+              <path d="M 8 15 Q 8 12 11 12 L 45 12 Q 48 12 48 15 L 48 18 L 8 18 Z" fill="#B82E2E"/>
+              <!-- 鋼圈 -->
+              <rect x="14" y="9" width="2" height="6" rx="1" fill="#7A6E55"/>
+              <rect x="40" y="9" width="2" height="6" rx="1" fill="#7A6E55"/>
+              <!-- 月份字（手繪小條） -->
+              <rect x="24" y="14" width="8" height="2" rx="1" fill="white"/>
+              <!-- 月曆方格 -->
+              <g fill="#EBE6D8">
+                <rect x="11" y="22" width="5" height="5" rx="0.5"/>
+                <rect x="17" y="22" width="5" height="5" rx="0.5"/>
+                <rect x="23" y="22" width="5" height="5" rx="0.5"/>
+                <rect x="29" y="22" width="5" height="5" rx="0.5"/>
+                <rect x="35" y="22" width="5" height="5" rx="0.5"/>
+                <rect x="41" y="22" width="3" height="5" rx="0.5"/>
+                <rect x="11" y="28" width="5" height="5" rx="0.5"/>
+                <rect x="17" y="28" width="5" height="5" rx="0.5"/>
+                <rect x="29" y="28" width="5" height="5" rx="0.5"/>
+                <rect x="35" y="28" width="5" height="5" rx="0.5"/>
+                <rect x="41" y="28" width="3" height="5" rx="0.5"/>
+                <rect x="11" y="34" width="5" height="5" rx="0.5"/>
+                <rect x="17" y="34" width="5" height="5" rx="0.5"/>
+                <rect x="29" y="34" width="5" height="5" rx="0.5"/>
+                <rect x="35" y="34" width="5" height="5" rx="0.5"/>
+                <rect x="41" y="34" width="3" height="5" rx="0.5"/>
+              </g>
+              <!-- 今天（綠色實心） -->
+              <rect x="23" y="28" width="5" height="5" rx="0.5" fill="#2C5530"/>
+              <!-- 活動標記點 -->
+              <circle cx="19.5" cy="36.5" r="1" fill="#C73E7E"/>
+              <circle cx="37.5" cy="30.5" r="1" fill="#2E5BBA"/>
+              <circle cx="31.5" cy="36.5" r="1" fill="#D97342"/>
             </svg>
           </div>
           <h3>行事曆</h3>
