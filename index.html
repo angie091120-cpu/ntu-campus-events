@@ -454,10 +454,12 @@
     .map-meta strong { font-weight: 700; }
 
     /* ───── 校外/其他地點面板 ───── */
+    /* 位置：右下角，但在縮放按鈕上方
+       zoom-controls 在 bottom:44px、高度約 120px，加 12px 間距 → bottom: 176px */
     .offscreen-panel {
       position: absolute;
-      bottom: 20px;
-      right: 20px;
+      bottom: 176px;
+      right: 44px;
       max-width: 280px;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(8px);
