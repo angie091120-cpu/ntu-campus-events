@@ -299,6 +299,18 @@
       background: rgba(74, 124, 58, 0.12);
       color: var(--accent);
     }
+    .offsite-tag {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      border-radius: 999px;
+      background: rgba(217, 115, 66, 0.15);
+      color: #B85A2B;
+      vertical-align: middle;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
 
     /* 卡片右側 - 日期區 */
     .event-card .side {
@@ -516,24 +528,31 @@
         const organizerHtml = event.organizer
           ? `<div class="organizer">主辦：${escapeHtml(event.organizer)}</div>` : '';
 
+        // 「地圖」按鈕：只有有座標的活動才顯示
+        const mapBtn = event.mapLocation
+          ? `<a href="index.html#${event.id}" class="secondary">地圖</a>` : '';
+
         // 報名相關按鈕
         let actionBtns = '';
         if (event.needsRegistration && event.registrationLink) {
           actionBtns = `
-            <a href="${event.registrationLink}" class="primary" target="_blank" rel="noopener">立即報名 →</a>
+            <a href="${trackUrl(event.id, event.registrationLink)}" class="primary" target="_blank" rel="noopener">立即報名 →</a>
             ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="secondary" target="_blank" rel="noopener">詳情</a>` : ''}
-            <a href="index.html#${event.id}" class="secondary">地圖</a>`;
+            ${mapBtn}`;
         } else if (event.needsRegistration === true) {
           actionBtns = `
             <span class="reg-badge">⚠ 需報名</span>
             ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
-            <a href="index.html#${event.id}" class="secondary">地圖</a>`;
+            ${mapBtn}`;
         } else {
           actionBtns = `
             ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
             ${event.needsRegistration === false ? `<span class="reg-badge free">自由參加</span>` : ''}
-            <a href="index.html#${event.id}" class="secondary">地圖</a>`;
+            ${mapBtn}`;
         }
+
+        // 地點顯示：校外活動加標籤
+        const offsiteTag = event.mapLocation ? '' : ' <span class="offsite-tag">校外/其他</span>';
 
         return `
           <article class="event-card">
@@ -550,7 +569,7 @@
                 <span class="day">${day}</span>
                 <span class="time">${escapeHtml(event.time || '')}</span>
               </div>
-              <div class="loc">${escapeHtml(event.location || '')}</div>
+              <div class="loc">${escapeHtml(event.location || '地點未提供')}${offsiteTag}</div>
             </div>
           </article>
         `;

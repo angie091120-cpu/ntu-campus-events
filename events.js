@@ -352,11 +352,13 @@ function parseEventsCsv(csv) {
           x = match.x; y = match.y;
           console.log(`[events.js] 活動「${event.title}」自動帶入座標 (從「${event.location}」查表)`);
         } else if (event.location) {
-          console.warn(`[events.js] 活動「${event.title}」找不到對應建築「${event.location}」`);
+          console.warn(`[events.js] 活動「${event.title}」找不到對應建築「${event.location}」，將顯示為「校外/其他」`);
         }
       }
-      event.x = isValidCoord(x) ? x : 0;
-      event.y = isValidCoord(y) ? y : 0;
+      // 標記是否有有效座標：用 mapLocation 旗標讓地圖頁判斷
+      event.mapLocation = isValidCoord(x) && isValidCoord(y);
+      event.x = event.mapLocation ? x : 0;
+      event.y = event.mapLocation ? y : 0;
 
       // 「需要報名」欄位：接受是/否、Y/N、TRUE/FALSE、空白
       event.needsRegistration = parseYesNo(event.needsRegistration);

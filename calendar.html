@@ -406,6 +406,18 @@
       background: rgba(74, 124, 58, 0.12);
       color: var(--accent);
     }
+    .offsite-tag {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      border-radius: 999px;
+      background: rgba(217, 115, 66, 0.15);
+      color: #B85A2B;
+      vertical-align: middle;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
 
     /* ───── Empty state ───── */
     .empty {
@@ -672,9 +684,10 @@
 
       document.getElementById('modalTitle').textContent = event.title;
 
+      const offsiteTag = event.mapLocation ? '' : ' <span class="offsite-tag">校外/其他</span>';
       const metaRows = [
         `<div class="row"><span class="label">時間</span><span>${event.date} · ${event.time || ''}</span></div>`,
-        `<div class="row"><span class="label">地點</span><span>${event.location || ''}</span></div>`,
+        `<div class="row"><span class="label">地點</span><span>${escapeHtml(event.location || '地點未提供')}${offsiteTag}</span></div>`,
       ];
       if (event.organizer) {
         metaRows.push(`<div class="row"><span class="label">主辦</span><span>${escapeHtml(event.organizer)}</span></div>`);
@@ -694,7 +707,10 @@
         if (event.link) buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>`);
         if (event.needsRegistration === false) buttons.push(`<span class="reg-badge free">自由參加</span>`);
       }
-      buttons.push(`<a href="index.html#${event.id}" class="secondary">在地圖上查看</a>`);
+      // 校外活動不顯示「在地圖上查看」（沒意義）
+      if (event.mapLocation) {
+        buttons.push(`<a href="index.html#${event.id}" class="secondary">在地圖上查看</a>`);
+      }
       document.getElementById('modalActions').innerHTML = buttons.join('');
 
       document.getElementById('modal').classList.add('show');
