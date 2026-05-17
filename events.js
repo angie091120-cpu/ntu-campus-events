@@ -363,9 +363,28 @@ function parseEventsCsv(csv) {
       // 「需要報名」欄位：接受是/否、Y/N、TRUE/FALSE、空白
       event.needsRegistration = parseYesNo(event.needsRegistration);
 
+      // 日期標準化：把 YYYY/MM/DD、YYYY.MM.DD、YYYY年MM月DD日 等寫法都轉成 YYYY-MM-DD
+      event.date = normalizeDate(event.date);
+
       return event;
     })
     .filter(e => e.id && e.title);
+}
+
+// 把各種日期寫法統一成 YYYY-MM-DD
+// 支援：YYYY-MM-DD、YYYY/MM/DD、YYYY.MM.DD、YYYY年M月D日
+// 月份和日不滿兩位自動補 0
+function normalizeDate(s) {
+  if (!s) return '';
+  const str = String(s).trim();
+  if (!str) return '';
+  // 抓出數字（年/月/日，按出現順序）
+  const m = str.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (!m) return str; // 抓不到就照原樣回傳，總比丟掉好
+  const y = m[1];
+  const mo = m[2].padStart(2, '0');
+  const d = m[3].padStart(2, '0');
+  return `${y}-${mo}-${d}`;
 }
 
 // 把「是/否」「Y/N」「TRUE/FALSE」等都統一成 true/false/null
