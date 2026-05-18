@@ -406,6 +406,30 @@
       background: rgba(74, 124, 58, 0.12);
       color: var(--accent);
     }
+    .deadline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      font-size: 11px;
+      border-radius: 999px;
+      font-weight: 500;
+      vertical-align: middle;
+    }
+    .deadline-badge::before { content: "⏱"; font-size: 11px; }
+    .deadline-badge.open { background: rgba(46, 91, 186, 0.1); color: var(--c-lecture); }
+    .deadline-badge.urgent { background: rgba(217, 115, 66, 0.15); color: #B85A2B; }
+    .deadline-badge.today {
+      background: rgba(184, 46, 46, 0.12);
+      color: var(--c-competition);
+      font-weight: 700;
+    }
+    .deadline-badge.today::before { content: "🔥"; }
+    .deadline-badge.closed {
+      background: var(--bg);
+      color: var(--text-faint);
+      text-decoration: line-through;
+    }
     .offsite-tag {
       display: inline-block;
       margin-left: 4px;
@@ -692,13 +716,22 @@
       if (event.organizer) {
         metaRows.push(`<div class="row"><span class="label">主辦</span><span>${escapeHtml(event.organizer)}</span></div>`);
       }
+      // 報名截止
+      const regStatus = getRegistrationStatus(event);
+      if (regStatus) {
+        metaRows.push(`<div class="row"><span class="label">報名</span><span><span class="deadline-badge ${regStatus.status}">${regStatus.label}</span></span></div>`);
+      }
       document.getElementById('modalMeta').innerHTML = metaRows.join('');
       document.getElementById('modalDesc').textContent = event.description || '';
 
       // 動態 actions
       const buttons = [];
       if (event.needsRegistration && event.registrationLink) {
-        buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        if (regStatus && regStatus.status === 'closed') {
+          buttons.push(`<span class="primary" style="opacity:0.5;cursor:not-allowed;flex:1;text-align:center">報名已截止</span>`);
+        } else {
+          buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        }
         if (event.link) buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="secondary" target="_blank" rel="noopener">詳情</a>`);
       } else if (event.needsRegistration === true) {
         buttons.push(`<span class="reg-badge">⚠ 需報名</span>`);

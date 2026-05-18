@@ -157,6 +157,121 @@
       color: var(--text-muted);
       line-height: 1.7;
     }
+    .sidebar-foot code {
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    /* 「全選」是特殊 filter-item，視覺上跟其他類型有分隔 */
+    .filter-item.select-all {
+      border-bottom: 1px dashed var(--border-soft);
+      margin-bottom: 4px;
+      padding-bottom: 10px;
+      font-weight: 500;
+    }
+    .filter-item.select-all .label-text { color: var(--text); }
+
+    /* 手機版漂浮按鈕（小螢幕才顯示） */
+    .sidebar-toggle, .sidebar-close, .sidebar-backdrop {
+      display: none;
+    }
+    .sidebar-toggle {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 60;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 18px 11px 14px;
+      background: var(--text);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 500;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      transition: transform 0.15s;
+    }
+    .sidebar-toggle:hover { transform: translateY(-1px); }
+    .sidebar-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: none;
+      font-size: 22px;
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1;
+    }
+    .sidebar-close:hover { background: var(--border-soft); }
+
+    /* ──── 手機版 ──── */
+    @media (max-width: 760px) {
+      main { grid-template-columns: 1fr; }
+
+      /* sidebar 變抽屜式 */
+      aside.sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: 80%; max-width: 320px;
+        z-index: 70;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease-out;
+        padding-top: 60px;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+      }
+      aside.sidebar.open { transform: translateX(0); }
+
+      .sidebar-close { display: flex; align-items: center; justify-content: center; }
+      .sidebar-toggle { display: inline-flex; }
+
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 65;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+      }
+      .sidebar-backdrop.show { opacity: 1; pointer-events: auto; }
+
+      /* 地圖區佔滿 */
+      .map-section {
+        height: calc(100vh - 60px);
+      }
+
+      /* 活動卡：手機版佔下方半部，不要漂浮 */
+      .event-card {
+        left: 8px; right: 8px; top: auto; bottom: 8px;
+        width: auto;
+        max-width: none;
+      }
+
+      /* 縮放按鈕縮小貼右 */
+      .zoom-controls {
+        bottom: 80px;
+        right: 12px;
+      }
+      .map-meta {
+        bottom: 12px;
+        left: 12px;
+        font-size: 11px;
+      }
+      .offscreen-panel {
+        bottom: 200px;
+        right: 12px;
+        max-width: 240px;
+      }
+    }
 
     /* ───── Map area ───── */
     .map-section {
@@ -297,6 +412,117 @@
     .marker.sports      { background: var(--c-sports); }
     .marker.competition { background: var(--c-competition); }
 
+    /* Cluster：多活動重疊在同一座標時的合併標記 */
+    .marker.cluster {
+      width: 30px;
+      height: 30px;
+      background: var(--text);
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Serif TC', serif;
+      font-variant-numeric: tabular-nums;
+    }
+    .marker.cluster::before {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid var(--text);
+      opacity: 0.3;
+    }
+
+    /* Cluster 點開的活動清單 */
+    .cluster-popup {
+      position: fixed;
+      width: 260px;
+      max-height: 320px;
+      background: var(--surface);
+      border-radius: 10px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+      border: 1px solid var(--border-soft);
+      z-index: 35;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: cluster-in 0.18s ease-out;
+    }
+    @keyframes cluster-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .cluster-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 12px;
+    }
+    .cluster-head .loc {
+      font-weight: 700;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cluster-head .count {
+      background: var(--text);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .cluster-head .close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      width: 22px;
+      height: 22px;
+      line-height: 1;
+    }
+    .cluster-head .close:hover { color: var(--text); }
+    .cluster-list {
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    .cluster-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .cluster-item:hover { background: var(--bg); }
+    .cluster-item .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cluster-item .info { min-width: 0; flex: 1; }
+    .cluster-item .title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cluster-item .meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
     /* ───── Event card (popup) ───── */
     .event-card {
       position: absolute;
@@ -424,6 +650,41 @@
     .event-card .reg-badge.free {
       background: rgba(74, 124, 58, 0.12);
       color: var(--accent);
+    }
+    /* 報名截止狀態徽章 */
+    .deadline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      font-size: 11px;
+      border-radius: 999px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      vertical-align: middle;
+    }
+    .deadline-badge::before {
+      content: "⏱";
+      font-size: 11px;
+    }
+    .deadline-badge.open {
+      background: rgba(46, 91, 186, 0.1);
+      color: var(--c-lecture);
+    }
+    .deadline-badge.urgent {
+      background: rgba(217, 115, 66, 0.15);
+      color: #B85A2B;
+    }
+    .deadline-badge.today {
+      background: rgba(184, 46, 46, 0.12);
+      color: var(--c-competition);
+      font-weight: 700;
+    }
+    .deadline-badge.today::before { content: "🔥"; }
+    .deadline-badge.closed {
+      background: var(--bg);
+      color: var(--text-faint);
+      text-decoration: line-through;
     }
     .offsite-tag {
       display: inline-block;
@@ -556,7 +817,18 @@
   </header>
 
   <main>
-    <aside class="sidebar">
+    <!-- 手機版漂浮按鈕：展開篩選器 -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="開啟篩選">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="4" y1="6" x2="20" y2="6"/>
+        <line x1="7" y1="12" x2="17" y2="12"/>
+        <line x1="10" y1="18" x2="14" y2="18"/>
+      </svg>
+      <span>篩選</span>
+    </button>
+
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-close" id="sidebarClose" aria-label="關閉篩選">×</button>
       <h2>活動類型</h2>
       <div class="filter-list" id="typeFilters"></div>
 
@@ -581,6 +853,9 @@
         想新增活動？編輯 <code>EVENTS</code> 陣列即可。
       </div>
     </aside>
+
+    <!-- 手機版 sidebar 開啟時的背景遮罩 -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <section class="map-section">
       <div class="map-viewport" id="mapViewport">
@@ -641,8 +916,21 @@
       const counts = {};
       EVENTS.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1; });
 
+      const allSelected = state.activeTypes.size === EVENT_TYPES.length;
+      const noneSelected = state.activeTypes.size === 0;
+
       const container = document.getElementById('typeFilters');
-      container.innerHTML = EVENT_TYPES.map(t => `
+
+      // 「全選」項目：indeterminate 狀態用於「部份選中」
+      const allItem = `
+        <label class="filter-item select-all">
+          <input type="checkbox" id="selectAll" ${allSelected ? 'checked' : ''}>
+          <span class="label-text">全選 / 取消全選</span>
+          <span class="count">${EVENTS.length}</span>
+        </label>
+      `;
+
+      const typeItems = EVENT_TYPES.map(t => `
         <label class="filter-item">
           <input type="checkbox" data-type="${t.id}" ${state.activeTypes.has(t.id) ? 'checked' : ''}>
           <span class="dot" style="background:${t.color}"></span>
@@ -651,11 +939,32 @@
         </label>
       `).join('');
 
-      container.querySelectorAll('input').forEach(input => {
+      container.innerHTML = allItem + typeItems;
+
+      // 設定「全選」checkbox 的 indeterminate 狀態（部份選中）
+      const selectAllBox = document.getElementById('selectAll');
+      selectAllBox.indeterminate = !allSelected && !noneSelected;
+
+      // 全選 checkbox 事件
+      selectAllBox.addEventListener('change', () => {
+        if (selectAllBox.checked) {
+          // 勾全選 → 全部加入
+          EVENT_TYPES.forEach(t => state.activeTypes.add(t.id));
+        } else {
+          // 取消全選 → 全部移除
+          state.activeTypes.clear();
+        }
+        renderFilters();
+        renderMarkers();
+      });
+
+      // 各類型 checkbox 事件
+      container.querySelectorAll('input[data-type]').forEach(input => {
         input.addEventListener('change', () => {
           const type = input.dataset.type;
           if (input.checked) state.activeTypes.add(type);
           else state.activeTypes.delete(type);
+          renderFilters(); // 重新渲染才能更新「全選」狀態
           renderMarkers();
         });
       });
@@ -683,31 +992,58 @@
       container.querySelectorAll('.marker').forEach(m => m.remove());
 
       let visible = 0;
-      let offscreenCount = 0;
       const offscreenList = [];
 
-      EVENTS.forEach(event => {
-        const passFilter = state.activeTypes.has(event.type) && isWithinDateRange(event);
-        if (!passFilter) return;
+      // 先過濾出符合條件的活動
+      const matched = EVENTS.filter(event =>
+        state.activeTypes.has(event.type) && isWithinDateRange(event)
+      );
 
-        if (!event.mapLocation) {
-          // 沒有有效座標 → 校外/其他
-          offscreenCount++;
-          offscreenList.push(event);
-          return;
-        }
-        visible++;
+      // 分校外與校內
+      const onMap = [];
+      matched.forEach(event => {
+        if (!event.mapLocation) offscreenList.push(event);
+        else onMap.push(event);
+      });
 
+      // 把座標相同的活動 group 起來
+      // key 用四捨五入後的座標（容差約 0.5%，避免浮點誤差影響）
+      const groups = new Map();
+      onMap.forEach(event => {
+        const key = `${event.x.toFixed(3)},${event.y.toFixed(3)}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(event);
+      });
+
+      visible = onMap.length;
+
+      // 為每個 group 渲染一個 marker（單個或 cluster）
+      groups.forEach((events, key) => {
+        const [x, y] = key.split(',').map(Number);
         const marker = document.createElement('div');
-        marker.className = `marker ${event.type}`;
-        marker.style.left = `${event.x * 100}%`;
-        marker.style.top = `${event.y * 100}%`;
-        marker.dataset.id = event.id;
-        marker.title = event.title;
-        marker.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showEvent(event.id);
-        });
+        marker.style.left = `${x * 100}%`;
+        marker.style.top = `${y * 100}%`;
+
+        if (events.length === 1) {
+          // 單一活動：傳統 marker
+          const event = events[0];
+          marker.className = `marker ${event.type}`;
+          marker.dataset.id = event.id;
+          marker.title = event.title;
+          marker.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showEvent(event.id);
+          });
+        } else {
+          // 多活動 cluster：圓形 + 數字
+          marker.className = 'marker cluster';
+          marker.textContent = events.length;
+          marker.title = events.map(e => e.title).join(' / ');
+          marker.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCluster(events, e.currentTarget);
+          });
+        }
         container.appendChild(marker);
       });
 
@@ -720,6 +1056,63 @@
         const sel = EVENTS.find(e => e.id === state.selectedId);
         if (!sel || !state.activeTypes.has(sel.type) || !isWithinDateRange(sel)) closeCard();
       }
+    }
+
+    // Cluster：點擊後顯示該位置所有活動的清單
+    function showCluster(events, markerEl) {
+      // 關掉可能還開著的單一活動卡片
+      closeCard();
+
+      // 建立 cluster popup
+      let popup = document.getElementById('clusterPopup');
+      if (popup) popup.remove();
+      popup = document.createElement('div');
+      popup.id = 'clusterPopup';
+      popup.className = 'cluster-popup';
+      popup.innerHTML = `
+        <div class="cluster-head">
+          <span class="loc">📍 ${escapeHtml(events[0].location || '同一地點')}</span>
+          <span class="count">${events.length} 個活動</span>
+          <button class="close" onclick="document.getElementById('clusterPopup').remove()">×</button>
+        </div>
+        <div class="cluster-list">
+          ${events.map(e => {
+            const type = EVENT_TYPES.find(t => t.id === e.type) || {};
+            return `
+              <div class="cluster-item" data-id="${e.id}">
+                <span class="dot" style="background:${type.color || '#999'}"></span>
+                <div class="info">
+                  <div class="title">${escapeHtml(e.title)}</div>
+                  <div class="meta">${e.date} · ${escapeHtml(e.time || '')}</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+      document.body.appendChild(popup);
+
+      // 定位在 marker 旁邊
+      const rect = markerEl.getBoundingClientRect();
+      popup.style.left = (rect.right + 8) + 'px';
+      popup.style.top = (rect.top - 4) + 'px';
+
+      // 若超出右邊界，改放左邊
+      const popupRect = popup.getBoundingClientRect();
+      if (popupRect.right > window.innerWidth - 12) {
+        popup.style.left = (rect.left - popupRect.width - 8) + 'px';
+      }
+      // 若超出下邊界，往上
+      if (popupRect.bottom > window.innerHeight - 12) {
+        popup.style.top = (window.innerHeight - popupRect.height - 12) + 'px';
+      }
+
+      popup.querySelectorAll('.cluster-item').forEach(el => {
+        el.addEventListener('click', () => {
+          popup.remove();
+          showEvent(el.dataset.id);
+        });
+      });
     }
 
     function renderOffscreenPanel(list) {
@@ -769,7 +1162,7 @@
 
       document.getElementById('cardTitle').textContent = event.title;
 
-      // 組合 meta：時間、地點、主辦單位
+      // 組合 meta：時間、地點、主辦單位、報名截止
       const offsiteTag = event.mapLocation ? '' : ' <span class="offsite-tag">校外/其他</span>';
       const metaItems = [
         `<div class="meta-item"><span class="label">時間</span><span>${event.date} · ${event.time || ''}</span></div>`,
@@ -777,6 +1170,11 @@
       ];
       if (event.organizer) {
         metaItems.push(`<div class="meta-item"><span class="label">主辦</span><span>${event.organizer}</span></div>`);
+      }
+      // 報名截止顯示
+      const regStatus = getRegistrationStatus(event);
+      if (regStatus) {
+        metaItems.push(`<div class="meta-item"><span class="label">報名</span><span><span class="deadline-badge ${regStatus.status}">${regStatus.label}</span></span></div>`);
       }
       document.getElementById('cardMeta').innerHTML = metaItems.join('');
       document.getElementById('cardDesc').textContent = event.description || '';
@@ -786,8 +1184,13 @@
       const buttons = [];
 
       // 「需要報名」+ 有報名連結 → 大按鈕「立即報名」
+      // 若已截止則改顯示禁用按鈕
       if (event.needsRegistration && event.registrationLink) {
-        buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        if (regStatus && regStatus.status === 'closed') {
+          buttons.push(`<span class="link primary" style="opacity:0.5;cursor:not-allowed">報名已截止</span>`);
+        } else {
+          buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
+        }
         if (event.link) {
           buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link secondary" target="_blank" rel="noopener">詳情</a>`);
         }
@@ -933,6 +1336,33 @@
     window.addEventListener('resize', () => {
       fitImage();
       if (typeof panzoom !== 'undefined') panzoom.reset();
+    });
+
+    /* ──── Sidebar 開合（手機版） ──── */
+    const sidebarEl = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+      sidebarEl.classList.add('open');
+      sidebarBackdrop.classList.add('show');
+    });
+    function closeSidebar() {
+      sidebarEl.classList.remove('open');
+      sidebarBackdrop.classList.remove('show');
+    }
+    document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+    sidebarBackdrop.addEventListener('click', closeSidebar);
+    // 點選一個活動類型後不自動關閉（讓使用者可以多選）；
+    // 但點地圖會關掉 sidebar
+    document.querySelector('.map-viewport')?.addEventListener('click', () => {
+      if (sidebarEl.classList.contains('open')) closeSidebar();
+    });
+
+    /* ──── 點空白處關閉 cluster popup ──── */
+    document.addEventListener('click', (e) => {
+      const popup = document.getElementById('clusterPopup');
+      if (popup && !popup.contains(e.target) && !e.target.closest('.marker.cluster')) {
+        popup.remove();
+      }
     });
 
     // 啟動：先從 Google Sheet 讀資料，再渲染畫面

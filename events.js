@@ -34,19 +34,20 @@ const EVENT_TYPES = [
    ③ 試算表欄位對應
    ──────────────────────────────────────────────────────── */
 const FIELD_MAP = {
-  'id':         'id',
-  '標題':       'title',
-  '類型':       'type',
-  '日期':       'date',
-  '時間':       'time',
-  '地點':       'location',
-  'x座標':      'x',
-  'y座標':      'y',
-  '描述':       'description',
-  '連結':       'link',
-  '主辦單位':   'organizer',
-  '需要報名':   'needsRegistration',
-  '報名連結':   'registrationLink',
+  'id':           'id',
+  '標題':         'title',
+  '類型':         'type',
+  '日期':         'date',
+  '時間':         'time',
+  '地點':         'location',
+  'x座標':        'x',
+  'y座標':        'y',
+  '描述':         'description',
+  '連結':         'link',
+  '主辦單位':     'organizer',
+  '需要報名':     'needsRegistration',
+  '報名連結':     'registrationLink',
+  '報名截止':     'registrationDeadline',
 };
 
 const BUILDING_FIELD_MAP = {
@@ -365,10 +366,32 @@ function parseEventsCsv(csv) {
 
       // 日期標準化：把 YYYY/MM/DD、YYYY.MM.DD、YYYY年MM月DD日 等寫法都轉成 YYYY-MM-DD
       event.date = normalizeDate(event.date);
+      event.registrationDeadline = normalizeDate(event.registrationDeadline);
 
       return event;
     })
     .filter(e => e.id && e.title);
+}
+
+// 給其他頁面用：判斷報名狀態
+// 回傳 { status: 'open' | 'closed' | 'today', label: '報名中' | '報名已截止' | '今日截止', daysLeft: 數字 }
+function getRegistrationStatus(event) {
+  if (!event.registrationDeadline) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadline = new Date(event.registrationDeadline);
+  deadline.setHours(23, 59, 59, 999); // 截止日當天還能報名
+  const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) {
+    return { status: 'closed', label: '報名已截止', daysLeft };
+  } else if (daysLeft === 0) {
+    return { status: 'today', label: '今日截止', daysLeft };
+  } else if (daysLeft <= 3) {
+    return { status: 'urgent', label: `剩 ${daysLeft} 天`, daysLeft };
+  } else {
+    return { status: 'open', label: `截止 ${event.registrationDeadline}`, daysLeft };
+  }
 }
 
 // 把各種日期寫法統一成 YYYY-MM-DD
