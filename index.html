@@ -271,6 +271,20 @@
         right: 12px;
         max-width: 240px;
       }
+      /* 手機版校外面板：摺疊時整體變藥丸狀 */
+      .offscreen-panel.collapsed {
+        max-width: none;
+        width: auto;
+      }
+      .offscreen-panel.collapsed .offscreen-head {
+        padding: 8px 12px;
+        font-size: 11px;
+        background: rgba(255, 255, 255, 0.96);
+        border-radius: 999px;
+      }
+      .offscreen-panel.collapsed .offscreen-head .head-text {
+        display: none; /* 摺疊時只留 icon + 數字 + 箭頭，節省空間 */
+      }
     }
 
     /* ───── Map area ───── */
@@ -745,11 +759,18 @@
       gap: 8px;
       padding: 10px 14px;
       background: var(--bg);
+      border: none;
       border-bottom: 1px solid var(--border-soft);
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.04em;
+      cursor: pointer;
+      width: 100%;
+      font-family: inherit;
+      color: var(--text);
+      text-align: left;
     }
+    .offscreen-head:hover { background: var(--border-soft); }
     .offscreen-head .icon { font-size: 14px; }
     .offscreen-head .count-badge {
       margin-left: auto;
@@ -760,6 +781,20 @@
       border-radius: 999px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
+    }
+    .offscreen-head .chevron {
+      color: var(--text-muted);
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+    .offscreen-panel.collapsed .offscreen-head {
+      border-bottom: none;
+    }
+    .offscreen-panel.collapsed .offscreen-head .chevron {
+      transform: rotate(180deg);
+    }
+    .offscreen-panel.collapsed .offscreen-list {
+      display: none;
     }
     .offscreen-list {
       max-height: 240px;
@@ -886,11 +921,12 @@
       </div>
 
       <div class="offscreen-panel" id="offscreenPanel">
-        <div class="offscreen-head">
+        <button class="offscreen-head" id="offscreenToggle" type="button" aria-expanded="true">
           <span class="icon">📍</span>
-          <span>校外 / 其他地點</span>
+          <span class="head-text">校外 / 其他地點</span>
           <span class="count-badge"><span id="offscreenCount">0</span></span>
-        </div>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
         <div class="offscreen-list" id="offscreenList"></div>
       </div>
     </section>
@@ -1123,6 +1159,12 @@
         panel.classList.remove('show');
         return;
       }
+      // 第一次顯示時，手機版預設摺疊
+      if (!panel.classList.contains('show')) {
+        if (window.matchMedia('(max-width: 760px)').matches) {
+          panel.classList.add('collapsed');
+        }
+      }
       panel.classList.add('show');
       countEl.textContent = list.length;
       listEl.innerHTML = list.map(e => {
@@ -1142,6 +1184,16 @@
         el.addEventListener('click', () => showEvent(el.dataset.id));
       });
     }
+
+    /* 校外面板：點 head 切換摺疊 */
+    document.getElementById('offscreenToggle').addEventListener('click', () => {
+      const panel = document.getElementById('offscreenPanel');
+      panel.classList.toggle('collapsed');
+      document.getElementById('offscreenToggle').setAttribute(
+        'aria-expanded',
+        panel.classList.contains('collapsed') ? 'false' : 'true'
+      );
+    });
 
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
