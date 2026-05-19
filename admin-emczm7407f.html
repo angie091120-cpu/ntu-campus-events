@@ -82,6 +82,67 @@
 
     main { max-width: 1180px; margin: 0 auto; padding: 36px; }
 
+    /* 日期區間選擇器 */
+    .range-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      margin-bottom: 14px;
+    }
+    .range-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .range-presets {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .preset-btn:hover { background: var(--bg); }
+    .preset-btn.active {
+      background: var(--text);
+      color: white;
+      border-color: var(--text);
+    }
+    .preset-btn.apply {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .range-custom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .range-custom input[type="date"] {
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
     .status {
       margin-bottom: 28px;
       padding: 14px 20px;
@@ -373,6 +434,23 @@
   </header>
 
   <main>
+    <!-- 日期區間選擇器 -->
+    <div class="range-bar">
+      <div class="range-label">資料區間</div>
+      <div class="range-presets">
+        <button class="preset-btn" data-preset="today">今天</button>
+        <button class="preset-btn active" data-preset="7d">過去 7 天</button>
+        <button class="preset-btn" data-preset="30d">過去 30 天</button>
+        <button class="preset-btn" data-preset="90d">過去 90 天</button>
+        <button class="preset-btn" data-preset="all">全部時間</button>
+        <button class="preset-btn" data-preset="custom">自訂</button>
+      </div>
+      <div class="range-custom" id="rangeCustom" style="display:none">
+        <input type="date" id="rangeFrom"> 到 <input type="date" id="rangeTo">
+        <button class="preset-btn apply" id="rangeApply">套用</button>
+      </div>
+    </div>
+
     <div class="status loading" id="status">
       <span class="dot"></span>
       <span id="statusText">正在載入統計資料...</span>
@@ -499,11 +577,53 @@
        ════════════════════════════════════════════════ */
     let statsData = null;
 
+    /* 日期區間狀態 */
+    let currentRange = { preset: '7d' }; // preset 或 { from, to }
+
+    /* 計算日期區間的 from/to */
+    function getDateRange(preset) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const fmt = d => d.toISOString().slice(0, 10);
+
+      if (preset === 'today') {
+        return { from: fmt(today), to: fmt(today) };
+      } else if (preset === '7d') {
+        const from = new Date(today);
+        from.setDate(today.getDate() - 6);
+        return { from: fmt(from), to: fmt(today) };
+      } else if (preset === '30d') {
+        const from = new Date(today);
+        from.setDate(today.getDate() - 29);
+        return { from: fmt(from), to: fmt(today) };
+      } else if (preset === '90d') {
+        const from = new Date(today);
+        from.setDate(today.getDate() - 89);
+        return { from: fmt(from), to: fmt(today) };
+      }
+      return null; // 'all' 或 'custom' 沒有預設範圍
+    }
+
     async function loadStats() {
       setStatus('loading', '正在載入統計資料...');
       try {
-        const url = adminKey ? `/api/stats?key=${encodeURIComponent(adminKey)}` : '/api/stats';
-        const res = await fetch(url);
+        // 組合查詢參數
+        const params = new URLSearchParams();
+        if (adminKey) params.set('key', adminKey);
+
+        if (currentRange.from && currentRange.to) {
+          params.set('from', currentRange.from);
+          params.set('to', currentRange.to);
+        } else if (currentRange.preset && currentRange.preset !== 'all') {
+          const range = getDateRange(currentRange.preset);
+          if (range) {
+            params.set('from', range.from);
+            params.set('to', range.to);
+          }
+        }
+        // preset === 'all' 不傳日期參數 → 後端回累計總數
+
+        const res = await fetch(`/api/stats?${params.toString()}`);
         if (res.status === 401) {
           setStatus('err', '需要輸入金鑰');
           showAuthModal();
@@ -511,12 +631,20 @@
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         statsData = await res.json();
-        setStatus('ok', `資料已更新 · ${new Date().toLocaleString('zh-TW')}`);
+
+        // 顯示當前範圍
+        let rangeText = '';
+        if (statsData.range === 'all') {
+          rangeText = '全部時間累計';
+        } else if (statsData.range && statsData.range.from) {
+          rangeText = `${statsData.range.from} → ${statsData.range.to}（${statsData.range.days} 天）`;
+        }
+        setStatus('ok', `${rangeText} · 更新於 ${new Date().toLocaleString('zh-TW')}`);
         renderAll();
         return true;
       } catch (err) {
         console.error('[admin] load stats fail', err);
-        setStatus('err', '載入失敗：' + err.message + '（如果 API 還沒部署，會看到這個訊息）');
+        setStatus('err', '載入失敗：' + err.message);
         return false;
       }
     }
@@ -525,6 +653,45 @@
       el.className = 'status ' + level;
       document.getElementById('statusText').textContent = text;
     }
+
+    /* preset 按鈕事件 */
+    document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.preset;
+        document.querySelectorAll('.preset-btn[data-preset]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (preset === 'custom') {
+          // 顯示自訂日期區
+          document.getElementById('rangeCustom').style.display = 'flex';
+          // 預設填上「過去 30 天」當輸入起點
+          const range = getDateRange('30d');
+          document.getElementById('rangeFrom').value = range.from;
+          document.getElementById('rangeTo').value = range.to;
+          return; // 等使用者按「套用」才查
+        }
+
+        document.getElementById('rangeCustom').style.display = 'none';
+        currentRange = { preset };
+        loadStats();
+      });
+    });
+
+    /* 自訂日期套用 */
+    document.getElementById('rangeApply').addEventListener('click', () => {
+      const from = document.getElementById('rangeFrom').value;
+      const to = document.getElementById('rangeTo').value;
+      if (!from || !to) {
+        alert('請選擇起訖日期');
+        return;
+      }
+      if (from > to) {
+        alert('起始日不能晚於結束日');
+        return;
+      }
+      currentRange = { from, to };
+      loadStats();
+    });
 
     /* 渲染：總覽 */
     function renderOverview() {

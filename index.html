@@ -285,6 +285,56 @@
       .offscreen-panel.collapsed .offscreen-head .head-text {
         display: none; /* 摺疊時只留 icon + 數字 + 箭頭，節省空間 */
       }
+
+      /* 手機版 cluster popup：改成底部抽屜 */
+      .cluster-popup {
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        bottom: 0;
+        width: 100%;
+        max-width: none;
+        max-height: 60vh;
+        border-radius: 16px 16px 0 0;
+        animation: cluster-slide-up 0.22s ease-out;
+        box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
+      }
+      /* 抽屜外的半透明遮罩（用 pseudo element 偷懶實作） */
+      .cluster-popup::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: -1;
+        animation: cluster-fade-in 0.22s ease-out;
+      }
+      @keyframes cluster-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes cluster-slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      /* 加一條手機抽屜常見的抓握條 */
+      .cluster-popup .cluster-head {
+        padding-top: 18px;
+        position: relative;
+      }
+      .cluster-popup .cluster-head::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .cluster-popup .cluster-list {
+        max-height: calc(60vh - 60px);
+      }
     }
 
     /* ───── Map area ───── */
@@ -458,7 +508,7 @@
       border-radius: 10px;
       box-shadow: 0 8px 28px rgba(0,0,0,0.18);
       border: 1px solid var(--border-soft);
-      z-index: 35;
+      z-index: 75;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -1128,19 +1178,29 @@
       `;
       document.body.appendChild(popup);
 
-      // 定位在 marker 旁邊
-      const rect = markerEl.getBoundingClientRect();
-      popup.style.left = (rect.right + 8) + 'px';
-      popup.style.top = (rect.top - 4) + 'px';
+      // 手機版：CSS 接手定位（從底部滑上來，不需要 JS 計算位置）
+      const isMobile = window.matchMedia('(max-width: 760px)').matches;
+      if (!isMobile) {
+        // 桌面版：定位在 marker 旁邊
+        const rect = markerEl.getBoundingClientRect();
+        popup.style.left = (rect.right + 8) + 'px';
+        popup.style.top = (rect.top - 4) + 'px';
 
-      // 若超出右邊界，改放左邊
-      const popupRect = popup.getBoundingClientRect();
-      if (popupRect.right > window.innerWidth - 12) {
-        popup.style.left = (rect.left - popupRect.width - 8) + 'px';
-      }
-      // 若超出下邊界，往上
-      if (popupRect.bottom > window.innerHeight - 12) {
-        popup.style.top = (window.innerHeight - popupRect.height - 12) + 'px';
+        const popupRect = popup.getBoundingClientRect();
+        // 若超出右邊界，改放左邊
+        if (popupRect.right > window.innerWidth - 12) {
+          const leftPos = rect.left - popupRect.width - 8;
+          if (leftPos >= 12) {
+            popup.style.left = leftPos + 'px';
+          } else {
+            // 左右都放不下 → 置中靠上
+            popup.style.left = Math.max(12, (window.innerWidth - popupRect.width) / 2) + 'px';
+          }
+        }
+        // 若超出下邊界，往上
+        if (popupRect.bottom > window.innerHeight - 12) {
+          popup.style.top = (window.innerHeight - popupRect.height - 12) + 'px';
+        }
       }
 
       popup.querySelectorAll('.cluster-item').forEach(el => {
@@ -1412,7 +1472,12 @@
     /* ──── 點空白處關閉 cluster popup ──── */
     document.addEventListener('click', (e) => {
       const popup = document.getElementById('clusterPopup');
-      if (popup && !popup.contains(e.target) && !e.target.closest('.marker.cluster')) {
+      if (!popup) return;
+      // 點到 popup 內的 head / list 才算「在 popup 內」
+      // 點到 popup 容器本身或外圍（手機版的 ::before 背景遮罩會落在這裡）→ 關閉
+      const inContent = e.target.closest('.cluster-head, .cluster-list');
+      const onClusterMarker = e.target.closest('.marker.cluster');
+      if (!inContent && !onClusterMarker) {
         popup.remove();
       }
     });
