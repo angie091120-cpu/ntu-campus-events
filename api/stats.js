@@ -1,16 +1,27 @@
 // /api/stats.js — 後台讀統計
 // GET /api/stats?key=XXX
 
+import { timingSafeEqual } from 'crypto';
 import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
-const ADMIN_KEY = process.env.ADMIN_KEY || '';
+
+// fail-closed：ADMIN_KEY 沒設或空字串一律拒絕；比對用常數時間（先比長度）
+function isAuthorized(providedKey) {
+  const adminKey = process.env.ADMIN_KEY || '';
+  if (!adminKey) return false;
+  if (typeof providedKey !== 'string' || !providedKey) return false;
+  const a = Buffer.from(providedKey, 'utf8');
+  const b = Buffer.from(adminKey, 'utf8');
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
   const providedKey = req.query.key || req.headers['x-admin-key'];
-  if (ADMIN_KEY && providedKey !== ADMIN_KEY) {
+  if (!isAuthorized(providedKey)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 
