@@ -474,6 +474,14 @@
       .day-cell { gap: 2px; }
       .more-link { font-size: 10px; padding: 1px 4px; }
     }
+      /* mobile-header 2026-10-06：640px 以下頁首不直排、不橫向捲動 */
+    @media (max-width: 640px) {
+      header { flex-wrap: wrap; padding: 10px 16px; gap: 6px 16px; }
+      .brand { white-space: nowrap; font-size: 20px; }
+      .brand .sub { display: none; }
+      nav { gap: 18px; flex-basis: 100%; white-space: nowrap; }
+      nav a { white-space: nowrap; font-size: 13px; padding-bottom: 4px; }
+    }
   </style>
 </head>
 <body>

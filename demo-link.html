@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title id="pageTitle">示範連結 · 校園活動</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F1E8;
+      --surface: #FFFFFF;
+      --text: #1A1815;
+      --text-muted: #6B665C;
+      --border: #DED8C5;
+      --border-soft: #EBE6D8;
+      --accent: #2C5530;
+
+      --c-lecture: #2E5BBA;
+      --c-workshop: #D97342;
+      --c-club: #7B4FB8;
+      --c-performance: #C73E7E;
+      --c-sports: #4A7C3A;
+      --c-competition: #B82E2E;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans TC', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ───── Header（與地圖頁一致） ───── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .brand .accent {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+      transform: translateY(-3px);
+    }
+    .brand .sub {
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-left: 4px;
+    }
+
+    nav { display: flex; gap: 28px; }
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding-bottom: 6px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+    nav a:hover { color: var(--text); }
+
+    /* ───── Main ───── */
+    main { max-width: 640px; margin: 0 auto; padding: 56px 20px 80px; }
+    h1 { font-family: 'Noto Serif TC', serif; font-size: 32px; font-weight: 700; margin-bottom: 20px; }
+    p.desc { font-size: 16px; line-height: 1.8; color: var(--text-muted); margin-bottom: 32px; }
+    a.back { display: inline-block; background: var(--text); color: #fff; text-decoration: none; font-size: 14px; font-weight: 500; padding: 12px 22px; border-radius: 8px; }
+    a.back:hover { background: var(--accent); }
+    /* mobile-header 2026-10-06：640px 以下頁首不直排、不橫向捲動 */
+    @media (max-width: 640px) {
+      header { flex-wrap: wrap; padding: 10px 16px; gap: 6px 16px; }
+      .brand { white-space: nowrap; font-size: 20px; }
+      .brand .sub { display: none; }
+      nav { gap: 18px; flex-basis: 100%; white-space: nowrap; }
+      nav a { white-space: nowrap; font-size: 13px; padding-bottom: 4px; }
+    }
+    </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      校園活動
+      <span class="accent"></span>
+      地圖
+      <span class="sub">NTU CAMPUS EVENTS</span>
+    </div>
+    <nav>
+      <a href="home.html">首頁</a>
+      <a href="index.html">地圖</a>
+      <a href="events.html">活動列表</a>
+      <a href="calendar.html">行事曆</a>
+    </nav>
+  </header>
+
+  <!-- demo-notice 2026-09-30：課程專題原型的示範資料提示 -->
+  <div class="demo-notice" role="note" style="background:#EFEADE;color:#6B665C;font-size:12px;line-height:18px;padding:6px 16px;text-align:center;border-bottom:1px solid #EBE6D8;">示範資料｜本站是課程專題原型，活動與主辦資訊皆為虛構。</div>
+
+  <main>
+    <h1 id="title">示範連結</h1>
+    <p class="desc">這是課程專題原型的示範連結。實際上線時，活動卡上的按鈕會連到主辦單位的活動頁或報名表單；本站的活動與主辦資訊皆為虛構。</p>
+    <a class="back" href="events.html">回到活動列表</a>
+  </main>
+  <script>
+    (function () {
+      var kind = new URLSearchParams(location.search).get('kind');
+      var t = kind === 'register' ? '報名連結（示範）' : kind === 'info' ? '活動頁面（示範）' : '示範連結';
+      document.getElementById('title').textContent = t;
+      document.title = t + ' · 校園活動';
+    })();
+  </script>
+</body>
+</html>
