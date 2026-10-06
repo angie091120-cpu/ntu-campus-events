@@ -1079,6 +1079,10 @@
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .slice(0, 4);
 
+      const upcomingCount = EVENTS.filter(isUpcomingEvent).length;
+      document.getElementById('liveCount').textContent =
+        upcomingCount > 0 ? `${upcomingCount} 場活動即將舉行` : '目前沒有排定的活動';
+
       const grid = document.getElementById('featuredGrid');
       if (upcoming.length === 0) {
         grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-faint); background: var(--surface); border-radius: 14px;">目前沒有即將發生的活動</div>`;
@@ -1105,8 +1109,6 @@
           </a>
         `;
       }).join('');
-
-      document.getElementById('liveCount').textContent = `${EVENTS.length} 場活動進行中`;
     }
 
     /* ═══════════ 未來七天時間軸 ═══════════ */

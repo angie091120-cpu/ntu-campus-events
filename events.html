@@ -323,6 +323,8 @@
       color: var(--text-faint);
       text-decoration: line-through;
     }
+    .deadline-badge.ended-badge::before { content: none; }
+    .deadline-badge.ended-badge { text-decoration: none; }
     .offsite-tag {
       display: inline-block;
       margin-left: 4px;
@@ -518,7 +520,12 @@
       }
 
       filtered.sort((a, b) => {
-        if (state.sort === 'date-asc')  return new Date(a.date) - new Date(b.date);
+        if (state.sort === 'date-asc') {
+          // 今天以後（早到晚）在前，已結束（晚到早）在後
+          const ua = isUpcomingEvent(a), ub = isUpcomingEvent(b);
+          if (ua !== ub) return ua ? -1 : 1;
+          return ua ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date);
+        }
         if (state.sort === 'date-desc') return new Date(b.date) - new Date(a.date);
         if (state.sort === 'title')     return a.title.localeCompare(b.title, 'zh-Hant');
         return 0;
@@ -567,8 +574,9 @@
         // 報名相關按鈕
         let actionBtns = '';
         if (event.needsRegistration && event.registrationLink) {
+          // 已截止時只留狀態標記（deadlineBadge），不再放停用按鈕
           const regBtn = (regStatus && regStatus.status === 'closed')
-            ? `<span class="primary" style="opacity:0.5;cursor:not-allowed">報名已截止</span>`
+            ? ''
             : `<a href="${trackUrl(event.id, event.registrationLink)}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`;
           actionBtns = `
             ${regBtn}
@@ -594,7 +602,7 @@
         return `
           <article class="event-card">
             <div class="info">
-              <span class="tag ${event.type}">${type.name || event.type}</span>
+              <span class="tag ${event.type}">${type.name || event.type}</span>${isUpcomingEvent(event) ? '' : ' <span class="deadline-badge closed ended-badge">已結束</span>'}
               <h3>${escapeHtml(event.title)}</h3>
               <p class="desc">${escapeHtml(event.description || '')}</p>
               ${organizerHtml}

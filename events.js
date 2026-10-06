@@ -394,6 +394,18 @@ function getRegistrationStatus(event) {
   }
 }
 
+// 台北時區的今天，格式 YYYY-MM-DD（與 normalizeDate 輸出同格式，可直接字串比較）
+function getTodayTaipei() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+}
+
+// 活動是否「今天以後（含今天）」；沒有日期的活動視為不是
+function isUpcomingEvent(event) {
+  return !!event.date && event.date >= getTodayTaipei();
+}
+
 // 把各種日期寫法統一成 YYYY-MM-DD
 // 支援：YYYY-MM-DD、YYYY/MM/DD、YYYY.MM.DD、YYYY年M月D日
 // 月份和日不滿兩位自動補 0

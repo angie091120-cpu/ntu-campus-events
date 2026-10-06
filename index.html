@@ -937,8 +937,7 @@
       </div>
 
       <div class="sidebar-foot">
-        點地圖上的彩色圓點查看活動詳情。<br>
-        想新增活動？編輯 <code>EVENTS</code> 陣列即可。
+        點地圖上的彩色圓點查看活動詳情。
       </div>
     </aside>
 
@@ -1302,7 +1301,7 @@
       // 若已截止則改顯示禁用按鈕
       if (event.needsRegistration && event.registrationLink) {
         if (regStatus && regStatus.status === 'closed') {
-          buttons.push(`<span class="link primary" style="opacity:0.5;cursor:not-allowed">報名已截止</span>`);
+          // 已截止：上方「報名」列已有狀態標記，不重複放按鈕
         } else {
           buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
         }
