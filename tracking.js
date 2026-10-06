@@ -8,8 +8,9 @@
 (function () {
   // 把原始連結轉成中繼跳轉網址
   window.trackUrl = function (eventId, originalUrl) {
-    if (!eventId || !originalUrl) return originalUrl || '#';
-    if (!/^https?:\/\//i.test(originalUrl)) return originalUrl;
+    // 不是 http(s) 的連結（javascript:、data: 等）一律回 '#'，不原樣回傳
+    if (!originalUrl || !/^https?:\/\//i.test(originalUrl)) return '#';
+    if (!eventId) return originalUrl;
     return `/api/go?id=${encodeURIComponent(eventId)}&url=${encodeURIComponent(originalUrl)}`;
   };
 

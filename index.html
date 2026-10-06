@@ -1123,7 +1123,7 @@
         if (events.length === 1) {
           // 單一活動：傳統 marker
           const event = events[0];
-          marker.className = `marker ${event.type}`;
+          marker.className = `marker ${typeClass(event.type)}`;
           marker.dataset.id = event.id;
           marker.title = event.title;
           marker.addEventListener('click', (e) => {
@@ -1175,11 +1175,11 @@
           ${events.map(e => {
             const type = EVENT_TYPES.find(t => t.id === e.type) || {};
             return `
-              <div class="cluster-item" data-id="${e.id}">
+              <div class="cluster-item" data-id="${escapeAttr(e.id)}">
                 <span class="dot" style="background:${type.color || '#999'}"></span>
                 <div class="info">
                   <div class="title">${escapeHtml(e.title)}</div>
-                  <div class="meta">${e.date} · ${escapeHtml(e.time || '')}</div>
+                  <div class="meta">${escapeHtml(e.date)} · ${escapeHtml(e.time || '')}</div>
                 </div>
               </div>
             `;
@@ -1240,7 +1240,7 @@
       listEl.innerHTML = list.map(e => {
         const type = EVENT_TYPES.find(t => t.id === e.type) || {};
         return `
-          <div class="offscreen-item" data-id="${e.id}">
+          <div class="offscreen-item" data-id="${escapeAttr(e.id)}">
             <span class="dot" style="background:${type.color || '#999'}"></span>
             <div class="info">
               <div class="title">${escapeHtml(e.title)}</div>
@@ -1268,6 +1268,10 @@
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
+    // 屬性值（href、class、data-*、title）用；同樣跳脫 & < > " ' 五個字元
+    function escapeAttr(s) { return escapeHtml(s); }
+    // 類型 class：只輸出 EVENT_TYPES 裡的 id，找不到對照時用固定值 'other'，不輸出試算表原字串
+    function typeClass(t) { return EVENT_TYPES.some(x => x.id === t) ? t : 'other'; }
 
     function showEvent(id) {
       const event = EVENTS.find(e => e.id === id);
@@ -1279,24 +1283,24 @@
 
       const type = EVENT_TYPES.find(t => t.id === event.type);
       const typeTag = document.getElementById('cardType');
-      typeTag.className = `type-tag ${event.type}`;
-      typeTag.textContent = type ? type.name : event.type;
+      typeTag.className = `type-tag ${typeClass(event.type)}`;
+      typeTag.textContent = type ? type.name : '其他';
 
       document.getElementById('cardTitle').textContent = event.title;
 
       // 組合 meta：時間、地點、主辦單位、報名截止
       const offsiteTag = event.mapLocation ? '' : ' <span class="offsite-tag">校外/其他</span>';
       const metaItems = [
-        `<div class="meta-item"><span class="label">時間</span><span>${event.date} · ${event.time || ''}</span></div>`,
-        `<div class="meta-item"><span class="label">地點</span><span>${event.location || '地點未提供'}${offsiteTag}</span></div>`,
+        `<div class="meta-item"><span class="label">時間</span><span>${escapeHtml(event.date)} · ${escapeHtml(event.time || '')}</span></div>`,
+        `<div class="meta-item"><span class="label">地點</span><span>${escapeHtml(event.location || '地點未提供')}${offsiteTag}</span></div>`,
       ];
       if (event.organizer) {
-        metaItems.push(`<div class="meta-item"><span class="label">主辦</span><span>${event.organizer}</span></div>`);
+        metaItems.push(`<div class="meta-item"><span class="label">主辦</span><span>${escapeHtml(event.organizer)}</span></div>`);
       }
       // 報名截止顯示
       const regStatus = getRegistrationStatus(event);
       if (regStatus) {
-        metaItems.push(`<div class="meta-item"><span class="label">報名</span><span><span class="deadline-badge ${regStatus.status}">${regStatus.label}</span></span></div>`);
+        metaItems.push(`<div class="meta-item"><span class="label">報名</span><span><span class="deadline-badge ${regStatus.status}">${escapeHtml(regStatus.label)}</span></span></div>`);
       }
       document.getElementById('cardMeta').innerHTML = metaItems.join('');
       document.getElementById('cardDesc').textContent = event.description || '';
@@ -1311,21 +1315,21 @@
         if (regStatus && regStatus.status === 'closed') {
           // 已截止：上方「報名」列已有狀態標記，不重複放按鈕
         } else {
-          buttons.push(`<a href="${trackUrl(event.id, event.registrationLink)}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
+          buttons.push(`<a href="${escapeAttr(trackUrl(event.id, event.registrationLink))}" class="link primary" target="_blank" rel="noopener">立即報名 →</a>`);
         }
         if (event.link) {
-          buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link secondary" target="_blank" rel="noopener">詳情</a>`);
+          buttons.push(`<a href="${escapeAttr(trackUrl(event.id, event.link))}" class="link secondary" target="_blank" rel="noopener">詳情</a>`);
         }
       } else if (event.needsRegistration === true && !event.registrationLink) {
         // 標示需要報名但沒提供連結
         buttons.push(`<span class="reg-badge">⚠ 需報名（請洽主辦單位）</span>`);
         if (event.link) {
-          buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
+          buttons.push(`<a href="${escapeAttr(trackUrl(event.id, event.link))}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
         }
       } else {
         // 不需報名 / 未指定
         if (event.link) {
-          buttons.push(`<a href="${trackUrl(event.id, event.link)}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
+          buttons.push(`<a href="${escapeAttr(trackUrl(event.id, event.link))}" class="link primary" target="_blank" rel="noopener">查看活動 →</a>`);
         }
         if (event.needsRegistration === false) {
           buttons.push(`<span class="reg-badge free">自由參加</span>`);

@@ -573,11 +573,11 @@
         // 報名截止狀態
         const regStatus = getRegistrationStatus(event);
         const deadlineBadge = regStatus
-          ? `<span class="deadline-badge ${regStatus.status}">${regStatus.label}</span>` : '';
+          ? `<span class="deadline-badge ${regStatus.status}">${escapeHtml(regStatus.label)}</span>` : '';
 
         // 「地圖」按鈕：只有有座標的活動才顯示
         const mapBtn = event.mapLocation
-          ? `<a href="index.html#${event.id}" class="secondary">地圖</a>` : '';
+          ? `<a href="index.html#${escapeAttr(event.id)}" class="secondary">地圖</a>` : '';
 
         // 報名相關按鈕
         let actionBtns = '';
@@ -585,21 +585,21 @@
           // 已截止時只留狀態標記（deadlineBadge），不再放停用按鈕
           const regBtn = (regStatus && regStatus.status === 'closed')
             ? ''
-            : `<a href="${trackUrl(event.id, event.registrationLink)}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`;
+            : `<a href="${escapeAttr(trackUrl(event.id, event.registrationLink))}" class="primary" target="_blank" rel="noopener">立即報名 →</a>`;
           actionBtns = `
             ${regBtn}
             ${deadlineBadge}
-            ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="secondary" target="_blank" rel="noopener">詳情</a>` : ''}
+            ${event.link ? `<a href="${escapeAttr(trackUrl(event.id, event.link))}" class="secondary" target="_blank" rel="noopener">詳情</a>` : ''}
             ${mapBtn}`;
         } else if (event.needsRegistration === true) {
           actionBtns = `
             <span class="reg-badge">⚠ 需報名</span>
             ${deadlineBadge}
-            ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
+            ${event.link ? `<a href="${escapeAttr(trackUrl(event.id, event.link))}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
             ${mapBtn}`;
         } else {
           actionBtns = `
-            ${event.link ? `<a href="${trackUrl(event.id, event.link)}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
+            ${event.link ? `<a href="${escapeAttr(trackUrl(event.id, event.link))}" class="primary" target="_blank" rel="noopener">查看活動 →</a>` : ''}
             ${event.needsRegistration === false ? `<span class="reg-badge free">自由參加</span>` : ''}
             ${mapBtn}`;
         }
@@ -610,7 +610,7 @@
         return `
           <article class="event-card">
             <div class="info">
-              <span class="tag ${event.type}">${type.name || event.type}</span>${isUpcomingEvent(event) ? '' : ' <span class="deadline-badge closed ended-badge">已結束</span>'}
+              <span class="tag ${type.id ? escapeAttr(type.id) : 'other'}">${escapeHtml(type.name || '其他')}</span>${isUpcomingEvent(event) ? '' : ' <span class="deadline-badge closed ended-badge">已結束</span>'}
               <h3>${escapeHtml(event.title)}</h3>
               <p class="desc">${escapeHtml(event.description || '')}</p>
               ${organizerHtml}
@@ -632,6 +632,8 @@
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
+    // 屬性值（href、class、data-*、title）用；同樣跳脫 & < > " ' 五個字元
+    function escapeAttr(s) { return escapeHtml(s); }
 
     document.getElementById('searchInput').addEventListener('input', (e) => {
       state.search = e.target.value;

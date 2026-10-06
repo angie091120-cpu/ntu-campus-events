@@ -8,6 +8,9 @@ import { loadEventIndex, normalizeUrl } from './_sheet.js';
 
 const FALLBACK_PATH = '/events';
 
+// 允許轉址的目標主機（比對 URL.host，含非預設埠號）。之後要連外部主辦單位時，把主機加在這裡。
+const ALLOWED_HOSTS = ['ntu-campus-events.vercel.app'];
+
 const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
@@ -45,6 +48,17 @@ export default async function handler(req, res) {
     }
 
     if (!matched) {
+      return res.redirect(302, FALLBACK_PATH);
+    }
+
+    // 比對成功後再檢查主機：不在允許清單就回站內，也不累加點擊
+    let wantedHost = '';
+    try {
+      wantedHost = new URL(wanted).host.toLowerCase();
+    } catch {
+      wantedHost = '';
+    }
+    if (!ALLOWED_HOSTS.includes(wantedHost)) {
       return res.redirect(302, FALLBACK_PATH);
     }
 

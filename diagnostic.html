@@ -172,6 +172,12 @@
 
     const results = document.getElementById('results');
 
+    // 試算表來的值（欄位名稱、儲存格）放進 HTML 前一律跳脫 & < > " ' 五個字元
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
     function card(level, title, body, detail) {
       const iconMap = { ok: '✓', warn: '!', err: '✕', info: 'i' };
       const html = `
@@ -254,7 +260,7 @@
       if (parsed.errors && parsed.errors.length) {
         card('warn', 'CSV 解析時有警告',
           `共 ${parsed.errors.length} 個小問題，多半不影響使用。`,
-          parsed.errors.slice(0, 5).map(e => `第 ${e.row} 列：${e.message}`).join('<br>'));
+          parsed.errors.slice(0, 5).map(e => `第 ${escapeHtml(e.row)} 列：${escapeHtml(e.message)}`).join('<br>'));
       }
 
       // 5. 檢查欄位名稱
@@ -265,16 +271,16 @@
 
       if (missing.length === 0) {
         card('ok', '欄位名稱檢查通過',
-          `試算表的欄位：<code>${headers.join('、')}</code>`);
+          `試算表的欄位：<code>${headers.map(escapeHtml).join('、')}</code>`);
       } else {
         card('err', `缺少 ${missing.length} 個必要欄位`,
           '試算表第一列必須包含以下欄位（順序不限）：',
-          `<strong style="color:var(--err)">缺少：</strong>${missing.join('、')}<br><strong>目前有：</strong>${headers.join('、')}`);
+          `<strong style="color:var(--err)">缺少：</strong>${missing.map(escapeHtml).join('、')}<br><strong>目前有：</strong>${headers.map(escapeHtml).join('、')}`);
       }
       if (extra.length > 0) {
         card('info', `偵測到 ${extra.length} 個額外欄位`,
           '這些欄位不在 FIELD_MAP 設定中，會被忽略（不影響運作）。',
-          extra.join('、'));
+          extra.map(escapeHtml).join('、'));
       }
 
       // 6. 解析每筆活動
@@ -307,13 +313,13 @@
       const typeIds = cfg.eventTypes.map(t => t.id);
       const rows = events.map(e => {
         const cells = [
-          `<td class="mono">${e.id || '<span class="bad">空</span>'}</td>`,
-          `<td>${e.title || '<span class="bad">空</span>'}</td>`,
+          `<td class="mono">${e.id ? escapeHtml(e.id) : '<span class="bad">空</span>'}</td>`,
+          `<td>${e.title ? escapeHtml(e.title) : '<span class="bad">空</span>'}</td>`,
           typeIds.includes(e.type)
-            ? `<td>${cfg.eventTypes.find(t => t.id === e.type).name}</td>`
-            : `<td class="bad">「${e.type || '空'}」未對應</td>`,
-          `<td class="mono">${e.date || '—'}</td>`,
-          `<td>${e.location || '—'}</td>`,
+            ? `<td>${escapeHtml(cfg.eventTypes.find(t => t.id === e.type).name)}</td>`
+            : `<td class="bad">「${escapeHtml(e.type || '空')}」未對應</td>`,
+          `<td class="mono">${escapeHtml(e.date || '—')}</td>`,
+          `<td>${escapeHtml(e.location || '—')}</td>`,
           (e.x > 0 && e.x < 1 && e.y > 0 && e.y < 1)
             ? `<td class="mono">${e.x.toFixed(3)}, ${e.y.toFixed(3)}</td>`
             : `<td class="bad mono">${e.x}, ${e.y} 異常</td>`,
@@ -336,7 +342,7 @@
       if (duplicates.length > 0) {
         card('err', 'id 重複',
           '每筆活動的 id 必須唯一，否則「在地圖上查看」功能會出錯。',
-          '重複的 id：' + [...new Set(duplicates)].join('、'));
+          '重複的 id：' + [...new Set(duplicates)].map(escapeHtml).join('、'));
       }
 
       // 9. 總結

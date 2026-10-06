@@ -1063,6 +1063,8 @@
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
+    // 屬性值（href、class、data-*、title）用；同樣跳脫 & < > " ' 五個字元
+    function escapeAttr(s) { return escapeHtml(s); }
 
     /* ═══════════ 統計小條 ═══════════ */
     function renderStats() {
@@ -1103,7 +1105,7 @@
         return `
           <a href="events.html" class="featured-card">
             <div class="top">
-              <span class="tag ${event.type}">${type.name || event.type}</span>
+              <span class="tag ${type.id ? escapeAttr(type.id) : 'other'}">${escapeHtml(type.name || '其他')}</span>
               <div class="date-mini">
                 <span class="month">${MONTHS[d.getMonth()]}</span>
                 <span class="day">${d.getDate()}</span>
@@ -1149,7 +1151,7 @@
           : events.map(e => {
               const type = EVENT_TYPES.find(t => t.id === e.type) || {};
               return `
-                <a href="index.html#${e.id}" class="timeline-event">
+                <a href="index.html#${escapeAttr(e.id)}" class="timeline-event">
                   <span class="time">${escapeHtml(e.time || '—')}</span>
                   <div class="title-row">
                     <span class="type-dot" style="background:${type.color || '#999'}"></span>
